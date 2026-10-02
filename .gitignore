@@ -1,0 +1,4 @@
+.env
+python-agent/venv
+PLANNING.MD
+__pycache__
