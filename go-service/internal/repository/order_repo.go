@@ -48,3 +48,8 @@ func (r *OrderRepo) GetTotalPurchaseByCustomerID(ctx context.Context, customerID
 	err := r.pool.QueryRow(ctx, `SELECT COALESCE(SUM(amount), 0) FROM orders WHERE customer_id = $1 AND status != 'cancelled'`, customerID).Scan(&total)
 	return total, err
 }
+
+func (r *OrderRepo) CreateOrder(ctx context.Context, o *model.Order) error {
+	query := `INSERT INTO orders (customer_id, product_name, amount, status, tracking_id) VALUES ($1, $2, $3, $4, $5) RETURNING uuid, order_date`
+	return r.pool.QueryRow(ctx, query, o.CustomerID, o.ProductName, o.Amount, o.Status, o.TrackingID).Scan(&o.UUID, &o.OrderDate)
+}

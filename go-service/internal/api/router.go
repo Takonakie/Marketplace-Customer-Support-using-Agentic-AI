@@ -23,15 +23,20 @@ func NewRouter(orderRepo *repository.OrderRepo, caseRepo *repository.CaseRepo, u
 	orderH := NewOrderHandler(orderRepo)
 	caseH := NewCaseHandler(caseRepo, userRepo)
 	userH := NewUserHandler(userRepo)
+	docH := NewDocHandler(docRepo)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/orders", orderH.GetOrders)
+		r.Post("/orders", orderH.CreateOrder)
 		r.Get("/orders/total", orderH.GetTotal)
 
 		r.Get("/cases", caseH.ListCases)
 		r.Post("/cases", caseH.CreateCase)
 		r.Get("/cases/{uuid}", caseH.GetCase)
 		r.Patch("/cases/{uuid}/status", caseH.UpdateCaseStatus)
+
+		r.Get("/docs", docH.ListDocs)
+		r.Post("/docs", docH.CreateDoc)
 
 		r.Get("/users", userH.GetUsers)
 	})

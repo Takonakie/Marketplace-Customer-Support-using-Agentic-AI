@@ -48,7 +48,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border-card);
         }
@@ -89,6 +89,49 @@
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .stats-grid {
@@ -140,8 +183,14 @@
             gap: 24px;
         }
 
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
         @media (max-width: 1024px) {
-            .content-layout {
+            .content-layout, .grid-2col {
                 grid-template-columns: 1fr;
             }
         }
@@ -167,7 +216,7 @@
             font-weight: 700;
         }
 
-        .btn-refresh {
+        .btn-refresh, .btn-action {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-card);
             color: var(--text-main);
@@ -179,7 +228,24 @@
             transition: all 0.2s;
         }
 
-        .btn-refresh:hover {
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-refresh:hover, .btn-action:hover {
             background: rgba(255, 255, 255, 0.1);
         }
 
@@ -232,6 +298,39 @@
             cursor: pointer;
         }
 
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
         .tool-list {
             display: flex;
             flex-direction: column;
@@ -260,6 +359,26 @@
             font-size: 12px;
             font-weight: 700;
         }
+
+        .alert-toast {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--accent-emerald);
+            color: #34d399;
+        }
+
+        .alert-error {
+            background: rgba(244, 63, 94, 0.2);
+            border: 1px solid var(--accent-rose);
+            color: #f87171;
+        }
     </style>
 </head>
 <body>
@@ -267,7 +386,7 @@
         <header>
             <div class="logo-area">
                 <h1>
-                    <span>⚡ AI Agent & Case Management Dashboard</span>
+                    <span>⚡ AI Agent & CS Admin Dashboard</span>
                 </h1>
             </div>
             <div>
@@ -277,73 +396,188 @@
             </div>
         </header>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-title">Total Cases</div>
-                <div class="stat-value" id="statTotalCases">0</div>
-                <div class="stat-desc">Semua kasus komplain dari Telegram</div>
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('casesTab', this)">
+                📋 Case Management
+            </button>
+            <button class="tab-btn" onclick="switchTab('sopTab', this)">
+                📚 Knowledge Base & SOP (RAG)
+            </button>
+            <button class="tab-btn" onclick="switchTab('ordersTab', this)">
+                📦 Order Data Seeder
+            </button>
+        </div>
+
+        <!-- TAB 1: CASES MANAGEMENT -->
+        <div id="casesTab" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Total Cases</div>
+                    <div class="stat-value" id="statTotalCases">0</div>
+                    <div class="stat-desc">Semua kasus komplain dari Telegram</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Open Cases</div>
+                    <div class="stat-value" id="statOpenCases" style="color: var(--accent-amber);">0</div>
+                    <div class="stat-desc">Membutuhkan tindak lanjut tim</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Resolved Cases</div>
+                    <div class="stat-value" id="statResolvedCases" style="color: var(--accent-emerald);">0</div>
+                    <div class="stat-desc">Kasus berhasil diselesaikan</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Avg Latency (ms)</div>
+                    <div class="stat-value" id="statAvgLatency" style="color: var(--accent-cyan);">~1.2s</div>
+                    <div class="stat-desc">Waktu pemrosesan AI Agent</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-title">Open Cases</div>
-                <div class="stat-value" id="statOpenCases" style="color: var(--accent-amber);">0</div>
-                <div class="stat-desc">Membutuhkan tindak lanjut tim</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">Resolved Cases</div>
-                <div class="stat-value" id="statResolvedCases" style="color: var(--accent-emerald);">0</div>
-                <div class="stat-desc">Kasus berhasil diselesaikan</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">Avg Latency (ms)</div>
-                <div class="stat-value" id="statAvgLatency" style="color: var(--accent-cyan);">~1.2s</div>
-                <div class="stat-desc">Waktu pemrosesan AI Agent</div>
+
+            <div class="content-layout">
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Daftar Tiket Komplain (Case Management)</div>
+                        <button class="btn-refresh" onclick="loadCases()">🔄 Refresh Data</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Judul Tiket</th>
+                                <th>Criticality</th>
+                                <th>Tanggal</th>
+                                <th>Status</th>
+                                <th>Aksi Update Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="caseTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-muted);">Memuat data tiket...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">AI Tool Calls Analytics</div>
+                    </div>
+                    <div class="tool-list">
+                        <div class="tool-item">
+                            <span class="tool-name">🔍 search_sop (RAG)</span>
+                            <span class="tool-count">Active</span>
+                        </div>
+                        <div class="tool-item">
+                            <span class="tool-name">📦 query_orders</span>
+                            <span class="tool-count">Active</span>
+                        </div>
+                        <div class="tool-item">
+                            <span class="tool-name">💰 get_purchase_total</span>
+                            <span class="tool-count">Active</span>
+                        </div>
+                        <div class="tool-item">
+                            <span class="tool-name">🎫 create_case</span>
+                            <span class="tool-count">Active</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="content-layout">
-            <div class="card-panel">
-                <div class="panel-header">
-                    <div class="panel-title">Daftar Tiket Komplain (Case Management)</div>
-                    <button class="btn-refresh" onclick="loadCases()">🔄 Refresh Data</button>
+        <!-- TAB 2: KNOWLEDGE BASE & SOP MANAGEMENT -->
+        <div id="sopTab" class="tab-content">
+            <div class="grid-2col">
+                <!-- Upload/Add New SOP Form -->
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Tambah SOP / Aturan Baru</div>
+                    </div>
+                    <div id="sopToast" class="alert-toast"></div>
+                    <form id="sopForm" onsubmit="handleCreateSop(event)">
+                        <div class="form-group">
+                            <label for="sopName">Nama SOP / Kategori Dokumen</label>
+                            <input type="text" id="sopName" class="form-control" placeholder="Contoh: SOP_Pengembalian_Barang_2026.txt" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sopContent">Isi Dokumen SOP</label>
+                            <textarea id="sopContent" class="form-control" placeholder="Tuliskan aturan, syarat pengembalian, batas waktu refund, dll..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">➕ Simpan & Perbarui Knowledge Base</button>
+                    </form>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Judul Tiket</th>
-                            <th>Criticality</th>
-                            <th>Tanggal</th>
-                            <th>Status</th>
-                            <th>Aksi Update Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="caseTableBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-muted);">Memuat data tiket...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
 
-            <div class="card-panel">
-                <div class="panel-header">
-                    <div class="panel-title">AI Tool Calls Analytics</div>
+                <!-- List of Knowledge Base Docs -->
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Daftar Dokumen SOP Terdaftar</div>
+                        <button class="btn-refresh" onclick="loadDocs()">🔄 Refresh</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama SOP</th>
+                                <th>Tanggal Diperbarui</th>
+                                <th>Status Vector</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sopTableBody">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted);">Memuat daftar dokumen...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="tool-list">
-                    <div class="tool-item">
-                        <span class="tool-name">🔍 search_sop (RAG)</span>
-                        <span class="tool-count">Active</span>
+            </div>
+        </div>
+
+        <!-- TAB 3: ORDER DATA SEEDER -->
+        <div id="ordersTab" class="tab-content">
+            <div class="grid-2col">
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Inject Mock Order Data</div>
                     </div>
-                    <div class="tool-item">
-                        <span class="tool-name">📦 query_orders</span>
-                        <span class="tool-count">Active</span>
+                    <div id="orderToast" class="alert-toast"></div>
+                    <form id="orderForm" onsubmit="handleCreateOrder(event)">
+                        <div class="form-group">
+                            <label for="custID">Customer ID (Telegram Chat ID atau No HP)</label>
+                            <input type="text" id="custID" class="form-control" placeholder="Contoh: 123456789 atau user_budi" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prodName">Nama Produk</label>
+                            <input type="text" id="prodName" class="form-control" placeholder="Contoh: Laptop Gaming ASUS ROG" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Harga / Total Belanja (Rp)</label>
+                            <input type="number" id="amount" class="form-control" placeholder="Contoh: 15000000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status Pesanan</label>
+                            <select id="status" class="form-control">
+                                <option value="shipped">Shipped (Dalam Pengiriman)</option>
+                                <option value="delivered">Delivered (Telah Diterima)</option>
+                                <option value="processing">Processing (Sedang Diproses)</option>
+                                <option value="cancelled">Cancelled (Dibatalkan)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="trackingID">Tracking / Resi ID</label>
+                            <input type="text" id="trackingID" class="form-control" placeholder="Contoh: JNE-99881122">
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">📦 Tambahkan Pesanan Uji Coba</button>
+                    </form>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Petunjuk Penggunaan Data Seeder</div>
                     </div>
-                    <div class="tool-item">
-                        <span class="tool-name">💰 get_purchase_total</span>
-                        <span class="tool-count">Active</span>
-                    </div>
-                    <div class="tool-item">
-                        <span class="tool-name">🎫 create_case</span>
-                        <span class="tool-count">Active</span>
+                    <div style="font-size: 14px; color: var(--text-muted); line-height: 1.6;">
+                        <p style="margin-bottom: 12px;">Tool ini memungkinkan Tim Admin CS untuk membuat data pesanan dummy dengan cepat untuk pengujian AI Agent.</p>
+                        <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                            <li>Gunakan Customer ID pengguna Telegram untuk menguji perintah bot <code>"cek status pesanan saya"</code>.</li>
+                            <li>Buka Telegram bot dan kirimkan pesan komplain untuk memverifikasi kecerdasan RAG & Tool Call Agent.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -351,6 +585,17 @@
     </div>
 
     <script>
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+
+            if (tabId === 'sopTab') loadDocs();
+        }
+
+        // ---- CASES MANAGEMENT ----
         async function loadCases() {
             try {
                 const response = await fetch('/api/cases');
@@ -375,7 +620,7 @@
                                 <strong>${escapeHtml(c.name)}</strong><br>
                                 <small style="color: var(--text-muted);">${escapeHtml(c.description || '-')}</small>
                             </td>
-                            <td><span style="font-weight: 700; color: ${getCriticalityColor(c.criticality)}">${escapeHtml(c.criticality.toUpperCase())}</span></td>
+                            <td><span style="font-weight: 700; color: ${getCriticalityColor(c.criticality)}">${escapeHtml((c.criticality || 'low').toUpperCase())}</span></td>
                             <td>${new Date(c.datetime).toLocaleString('id-ID')}</td>
                             <td><span class="badge-status status-${c.status}">${escapeHtml(c.status)}</span></td>
                             <td>
@@ -417,6 +662,93 @@
             }
         }
 
+        // ---- KNOWLEDGE BASE (DOCS) ----
+        async function loadDocs() {
+            try {
+                const res = await fetch('/api/docs');
+                const docs = await res.json();
+                const tbody = document.getElementById('sopTableBody');
+                tbody.innerHTML = '';
+
+                if (!docs || docs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Belum ada SOP yang disimpan.</td></tr>';
+                    return;
+                }
+
+                docs.forEach(d => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${escapeHtml(d.name)}</strong></td>
+                        <td>${new Date(d.updated_at).toLocaleString('id-ID')}</td>
+                        <td><span class="badge-status status-resolved">Indexed / Ready</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Gagal memuat docs:", err);
+            }
+        }
+
+        async function handleCreateSop(e) {
+            e.preventDefault();
+            const name = document.getElementById('sopName').value;
+            const doc = document.getElementById('sopContent').value;
+            const toast = document.getElementById('sopToast');
+
+            try {
+                const res = await fetch('/api/docs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, doc })
+                });
+
+                if (res.ok) {
+                    showToast(toast, '✅ SOP Berhasil disimpan dan ditambahkan ke Knowledge Base!', 'success');
+                    document.getElementById('sopForm').reset();
+                    loadDocs();
+                } else {
+                    showToast(toast, '❌ Gagal menyimpan SOP', 'error');
+                }
+            } catch (err) {
+                showToast(toast, '❌ Terjadi kesalahan jaringan', 'error');
+            }
+        }
+
+        // ---- ORDER SEEDER ----
+        async function handleCreateOrder(e) {
+            e.preventDefault();
+            const customer_id = document.getElementById('custID').value;
+            const product_name = document.getElementById('prodName').value;
+            const amount = parseInt(document.getElementById('amount').value);
+            const status = document.getElementById('status').value;
+            const tracking_id = document.getElementById('trackingID').value;
+            const toast = document.getElementById('orderToast');
+
+            try {
+                const res = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_id, product_name, amount, status, tracking_id })
+                });
+
+                if (res.ok) {
+                    showToast(toast, '✅ Pesanan berhasil dibuat & masuk database!', 'success');
+                    document.getElementById('orderForm').reset();
+                } else {
+                    showToast(toast, '❌ Gagal membuat pesanan', 'error');
+                }
+            } catch (err) {
+                showToast(toast, '❌ Terjadi kesalahan jaringan', 'error');
+            }
+        }
+
+        function showToast(el, msg, type) {
+            el.innerText = msg;
+            el.className = 'alert-toast alert-' + type;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
         function getCriticalityColor(crit) {
             switch ((crit || '').toLowerCase()) {
                 case 'high':
@@ -434,7 +766,6 @@
 
         // Auto load initial data
         loadCases();
-        // Polling update every 5 seconds
         setInterval(loadCases, 5000);
     </script>
 </body>
