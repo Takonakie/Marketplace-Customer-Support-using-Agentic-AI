@@ -81,7 +81,15 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
             tracker.record_llm_call(response.usage)
 
             if choice.message.tool_calls:
-                messages.append(choice.message)
+                msg_dict = {"role": "assistant", "content": choice.message.content or ""}
+                msg_dict["tool_calls"] = [
+                    {
+                        "id": tc.id,
+                        "type": tc.type,
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments}
+                    } for tc in choice.message.tool_calls
+                ]
+                messages.append(msg_dict)
                 for tool_call in choice.message.tool_calls:
                     fn_name = tool_call.function.name
                     args = json.loads(tool_call.function.arguments)
