@@ -34,3 +34,25 @@ func (r *CaseRepo) UpdateCaseStatus(ctx context.Context, uuid, status string) er
 	_, err := r.pool.Exec(ctx, `UPDATE cases SET status = $1, updated_at = NOW() WHERE uuid = $2`, status, uuid)
 	return err
 }
+
+func (r *CaseRepo) GetAllCases(ctx context.Context) ([]model.Case, error) {
+	rows, err := r.pool.Query(ctx, `SELECT uuid, name, datetime, criticality, description, COALESCE(assign_to::text, ''), status, COALESCE(resolution, '') FROM cases ORDER BY datetime DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var cases []model.Case
+	for rows.Next() {
+		var c model.Case
+		var assignTo string
+		if err := rows.Scan(&c.UUID, &c.Name, &c.Datetime, &c.Criticality, &c.Description, &assignTo, &c.Status, &c.Resolution); err != nil {
+			return nil, err
+		}
+		if assignTo != "" {
+			c.AssignTo = &assignTo
+		}
+		cases = append(cases, c)
+	}
+	return cases, nil
+}

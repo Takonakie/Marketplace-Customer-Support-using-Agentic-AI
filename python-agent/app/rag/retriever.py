@@ -9,20 +9,29 @@ def get_db_conn():
     return conn
 
 def embed_text(text: str) -> list[float]:
-    if not settings.LLM_API_KEY:
+    # Jika OPENAI_EMBEDDING_API_KEY diisi, gunakan official OpenAI endpoint
+    api_key = settings.OPENAI_EMBEDDING_API_KEY or settings.LLM_API_KEY
+    if not api_key:
         # Mock embedding for test/dev mode if key is absent
         return [0.0] * 1536
 
-    client_kwargs = {"api_key": settings.LLM_API_KEY}
-    if settings.LLM_BASE_URL:
+    client_kwargs = {"api_key": api_key}
+    if settings.OPENAI_EMBEDDING_BASE_URL:
+        client_kwargs["base_url"] = settings.OPENAI_EMBEDDING_BASE_URL
+    elif not settings.OPENAI_EMBEDDING_API_KEY and settings.LLM_BASE_URL:
         client_kwargs["base_url"] = settings.LLM_BASE_URL
 
     client = OpenAI(**client_kwargs)
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=text
-    )
-    return response.data[0].embedding
+    try:
+        embed_model = "openai/text-embedding-3-small" if "openrouter" in (settings.OPENAI_EMBEDDING_BASE_URL or "").lower() else "text-embedding-3-small"
+        response = client.embeddings.create(
+            model=embed_model,
+            input=text
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"[WARN] Provider embeddings API error ({e}), menggunakan fallback zero vector.")
+        return [0.0] * 1536
 
 def search_docs(query: str, top_k: int = 3) -> list[dict]:
     try:

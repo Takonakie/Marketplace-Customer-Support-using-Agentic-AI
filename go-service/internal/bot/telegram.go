@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/redis/go-redis/v9"
@@ -59,7 +60,7 @@ func (s *BotService) Start(ctx context.Context) {
 		}
 
 		msg := TelegramMessage{
-			MessageID:    string(rune(update.Message.MessageID)),
+			MessageID:    strconv.Itoa(update.Message.MessageID),
 			ChatID:       update.Message.Chat.ID,
 			CustomerName: update.Message.From.FirstName,
 			Text:         update.Message.Text,
@@ -86,7 +87,11 @@ func (s *BotService) listenOutgoing(ctx context.Context) {
 		log.Printf("Received response for chat %d: %s", resp.ChatID, resp.ReplyText)
 		if s.bot != nil {
 			tgMsg := tgbotapi.NewMessage(resp.ChatID, resp.ReplyText)
-			s.bot.Send(tgMsg)
+			if _, err := s.bot.Send(tgMsg); err != nil {
+				log.Printf("[ERROR] Failed to send Telegram message to chat %d: %v", resp.ChatID, err)
+			} else {
+				log.Printf("Successfully sent Telegram message to chat %d", resp.ChatID)
+			}
 		}
 	}
 }

@@ -95,3 +95,16 @@ func (h *CaseHandler) UpdateCaseStatus(w http.ResponseWriter, r *http.Request) {
 		"msg":    "Case status updated successfully",
 	})
 }
+
+func (h *CaseHandler) ListCases(w http.ResponseWriter, r *http.Request) {
+	cases, err := h.caseRepo.GetAllCases(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to fetch cases"}`, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if cases == nil {
+		cases = []model.Case{}
+	}
+	json.NewEncoder(w).Encode(cases)
+}

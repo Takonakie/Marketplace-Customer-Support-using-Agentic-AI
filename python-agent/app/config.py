@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.gutsai.id/v1")
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-3.7-flash")
+    FALLBACK_LLM_API_KEY: str = os.getenv("FALLBACK_LLM_API_KEY", "")
+    FALLBACK_LLM_BASE_URL: str = os.getenv("FALLBACK_LLM_BASE_URL", "https://openrouter.ai/api/v1")
+    FALLBACK_LLM_MODEL: str = os.getenv("FALLBACK_LLM_MODEL", "google/gemini-2.5-flash:free")
+    LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "2000"))
+    OPENAI_EMBEDDING_API_KEY: str = os.getenv("OPENAI_EMBEDDING_API_KEY", "")
+    OPENAI_EMBEDDING_BASE_URL: str = os.getenv("OPENAI_EMBEDDING_BASE_URL", "")
     GO_SERVICE_URL: str = os.getenv("GO_SERVICE_URL", "http://localhost:8080")
 
 settings = Settings()

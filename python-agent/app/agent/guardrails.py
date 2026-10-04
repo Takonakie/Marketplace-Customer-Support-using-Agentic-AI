@@ -5,13 +5,16 @@ def validate_input(text: str) -> str:
         return "Maaf, pesan Anda terlalu panjang. Mohon persingkat pertanyaan Anda."
     
     injection_patterns = [
-        r"ignore previous instructions",
+        r"ignore (all|previous) (instructions|prompts)",
         r"system prompt",
-        r"abai pesan sebelumnya"
+        r"abaikan (semua|pesan|instruksi) (sebelumnya|awal)",
+        r"forget (your|all) (rules|instructions)",
+        r"you are now (an|a|admin|developer|root)",
+        r"mode (jailbreak|developer|dan)",
     ]
     for pattern in injection_patterns:
         if re.search(pattern, text, re.IGNORECASE):
-            return "Maaf, permintaan Anda tidak dapat diproses."
+            return "Maaf, permintaan Anda tidak dapat diproses demi alasan keamanan."
     
     return None
 

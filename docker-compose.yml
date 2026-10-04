@@ -62,7 +62,13 @@ services:
       DATABASE_URL: postgres://user:password@postgres:5432/agenticsdk?sslmode=disable
       REDIS_URL: redis:6379
       LLM_API_KEY: ${LLM_API_KEY}
-      LLM_MODEL: ${LLM_MODEL:-gpt-4o}
+      LLM_BASE_URL: ${LLM_BASE_URL}
+      LLM_MODEL: ${LLM_MODEL}
+      FALLBACK_LLM_API_KEY: ${FALLBACK_LLM_API_KEY}
+      FALLBACK_LLM_BASE_URL: ${FALLBACK_LLM_BASE_URL}
+      FALLBACK_LLM_MODEL: ${FALLBACK_LLM_MODEL}
+      OPENAI_EMBEDDING_API_KEY: ${OPENAI_EMBEDDING_API_KEY}
+      OPENAI_EMBEDDING_BASE_URL: ${OPENAI_EMBEDDING_BASE_URL}
       GO_SERVICE_URL: http://go-service:8080
     depends_on:
       postgres:
