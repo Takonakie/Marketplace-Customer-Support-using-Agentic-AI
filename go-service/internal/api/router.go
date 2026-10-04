@@ -37,6 +37,7 @@ func NewRouter(orderRepo *repository.OrderRepo, caseRepo *repository.CaseRepo, u
 
 		r.Get("/docs", docH.ListDocs)
 		r.Post("/docs", docH.CreateDoc)
+		r.Delete("/docs/{uuid}", docH.DeleteDoc)
 
 		r.Get("/users", userH.GetUsers)
 	})

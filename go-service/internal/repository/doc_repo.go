@@ -52,3 +52,8 @@ func (r *DocRepo) CreateDoc(ctx context.Context, name, docContent string) (*mode
 	}
 	return &d, nil
 }
+
+func (r *DocRepo) DeleteDoc(ctx context.Context, uuid string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM docs WHERE uuid = $1`, uuid)
+	return err
+}
