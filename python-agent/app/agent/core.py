@@ -89,9 +89,12 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
                     start_t = time.time()
                     tool_fn = TOOL_MAP.get(fn_name)
                     if tool_fn:
+                        import inspect
                         from app.agent.tools import CUSTOMER_SCOPED_TOOLS
                         if fn_name in CUSTOMER_SCOPED_TOOLS:
-                            args["customer_id"] = f"tg_{chat_id}"
+                            sig = inspect.signature(tool_fn)
+                            if "customer_id" in sig.parameters:
+                                args["customer_id"] = f"tg_{chat_id}"
                         res = tool_fn(**args)
                     else:
                         res = {"error": "Tool not found"}
