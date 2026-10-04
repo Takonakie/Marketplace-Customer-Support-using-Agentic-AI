@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/agenticsdk/go-service/internal/model"
 	"github.com/agenticsdk/go-service/internal/repository"
 )
 
