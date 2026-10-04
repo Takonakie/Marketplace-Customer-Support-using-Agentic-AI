@@ -35,6 +35,10 @@ def embed_text(text: str) -> list[float]:
 
 def search_docs(query: str, top_k: int = 3) -> list[dict]:
     try:
+        # Auto-embed new or updated SOP documents dynamically
+        from app.rag.loader import load_and_embed_all_docs
+        load_and_embed_all_docs()
+
         query_vector = embed_text(query)
         conn = get_db_conn()
         cur = conn.cursor()

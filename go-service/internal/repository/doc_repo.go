@@ -57,3 +57,13 @@ func (r *DocRepo) DeleteDoc(ctx context.Context, uuid string) error {
 	_, err := r.pool.Exec(ctx, `DELETE FROM docs WHERE uuid = $1`, uuid)
 	return err
 }
+
+func (r *DocRepo) UpdateDoc(ctx context.Context, uuid, name, docContent string) (*model.Doc, error) {
+	var d model.Doc
+	query := `UPDATE docs SET name = $1, doc = $2, embedding = NULL, updated_at = NOW() WHERE uuid = $3 RETURNING uuid, name, doc, created_at, updated_at`
+	err := r.pool.QueryRow(ctx, query, name, docContent, uuid).Scan(&d.UUID, &d.Name, &d.Doc, &d.CreatedAt, &d.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}

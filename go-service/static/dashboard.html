@@ -253,6 +253,23 @@
             background: rgba(244, 63, 94, 0.3);
         }
 
+        .btn-edit {
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: var(--accent-cyan);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.2s;
+            margin-right: 6px;
+        }
+
+        .btn-edit:hover {
+            background: rgba(6, 182, 212, 0.3);
+        }
+
         .btn-primary {
             background: var(--primary-gradient);
             border: none;
@@ -531,7 +548,8 @@
                 <!-- Upload/Add New SOP Form -->
                 <div class="card-panel">
                     <div class="panel-header">
-                        <div class="panel-title">Upload Dokumen SOP (PDF / Word / Text)</div>
+                        <div class="panel-title" id="sopFormTitle">Tambah / Upload Dokumen SOP Baru</div>
+                        <button id="cancelEditBtn" class="btn-action" style="display: none; color: var(--accent-rose);" onclick="resetSopForm()">❌ Batal Edit</button>
                     </div>
                     <div id="sopToast" class="alert-toast"></div>
                     
@@ -551,7 +569,7 @@
                             <label for="sopContent">Pratinjau / Isi Dokumen SOP</label>
                             <textarea id="sopContent" class="form-control" placeholder="Isi dokumen akan otomatis terekstrak di sini setelah memilih file, atau Anda bisa mengetiknya secara manual..." required></textarea>
                         </div>
-                        <button type="submit" class="btn-primary" style="width: 100%;">➕ Simpan & Perbarui Knowledge Base</button>
+                        <button type="submit" id="sopSubmitBtn" class="btn-primary" style="width: 100%;">➕ Simpan & Perbarui Knowledge Base</button>
                     </form>
                 </div>
 
@@ -635,6 +653,9 @@
     </div>
 
     <script>
+        let cachedDocs = [];
+        let editingDocUuid = null;
+
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -712,7 +733,7 @@
             }
         }
 
-        // ---- KNOWLEDGE BASE (DOCS & FILE UPLOAD) ----
+        // ---- KNOWLEDGE BASE (DOCS, UPLOAD & EDIT) ----
         async function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -755,22 +776,23 @@
         async function loadDocs() {
             try {
                 const res = await fetch('/api/docs');
-                const docs = await res.json();
+                cachedDocs = await res.json();
                 const tbody = document.getElementById('sopTableBody');
                 tbody.innerHTML = '';
 
-                if (!docs || docs.length === 0) {
+                if (!cachedDocs || cachedDocs.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada SOP yang disimpan.</td></tr>';
                     return;
                 }
 
-                docs.forEach(d => {
+                cachedDocs.forEach(d => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><strong>${escapeHtml(d.name)}</strong></td>
                         <td>${new Date(d.updated_at).toLocaleString('id-ID')}</td>
                         <td><span class="badge-status status-resolved">Indexed / Ready</span></td>
                         <td>
+                            <button class="btn-edit" onclick="editSop('${d.uuid}')">✏️ Edit</button>
                             <button class="btn-danger" onclick="deleteSop('${d.uuid}', '${escapeHtml(d.name)}')">🗑️ Hapus</button>
                         </td>
                     `;
@@ -781,23 +803,48 @@
             }
         }
 
+        function editSop(uuid) {
+            const doc = cachedDocs.find(d => d.uuid === uuid);
+            if (!doc) return;
+
+            editingDocUuid = uuid;
+            document.getElementById('sopName').value = doc.name;
+            document.getElementById('sopContent').value = doc.doc;
+
+            document.getElementById('sopFormTitle').innerText = '✏️ Edit Dokumen SOP: ' + doc.name;
+            document.getElementById('sopSubmitBtn').innerText = '💾 Perbarui & Simpan Perubahan SOP';
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+        }
+
+        function resetSopForm() {
+            editingDocUuid = null;
+            document.getElementById('sopForm').reset();
+            document.getElementById('fileInput').value = '';
+            document.getElementById('sopFormTitle').innerText = 'Tambah / Upload Dokumen SOP Baru';
+            document.getElementById('sopSubmitBtn').innerText = '➕ Simpan & Perbarui Knowledge Base';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
         async function handleCreateSop(e) {
             e.preventDefault();
             const name = document.getElementById('sopName').value;
             const doc = document.getElementById('sopContent').value;
             const toast = document.getElementById('sopToast');
 
+            const url = editingDocUuid ? `/api/docs/${editingDocUuid}` : '/api/docs';
+            const method = editingDocUuid ? 'PUT' : 'POST';
+
             try {
-                const res = await fetch('/api/docs', {
-                    method: 'POST',
+                const res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, doc })
                 });
 
                 if (res.ok) {
-                    showToast(toast, '✅ SOP Berhasil disimpan dan ditambahkan ke Knowledge Base!', 'success');
-                    document.getElementById('sopForm').reset();
-                    document.getElementById('fileInput').value = '';
+                    const actionText = editingDocUuid ? 'diperbarui' : 'disimpan';
+                    showToast(toast, `✅ SOP Berhasil ${actionText} dan langsung aktif di Knowledge Base AI!`, 'success');
+                    resetSopForm();
                     loadDocs();
                 } else {
                     showToast(toast, '❌ Gagal menyimpan SOP', 'error');
@@ -815,6 +862,7 @@
                 const res = await fetch(`/api/docs/${uuid}`, { method: 'DELETE' });
                 if (res.ok) {
                     showToast(toast, `✅ SOP "${name}" berhasil dihapus.`, 'success');
+                    if (editingDocUuid === uuid) resetSopForm();
                     loadDocs();
                 } else {
                     showToast(toast, '❌ Gagal menghapus SOP', 'error');
