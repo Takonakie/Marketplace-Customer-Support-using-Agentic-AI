@@ -87,10 +87,17 @@ func (s *BotService) listenOutgoing(ctx context.Context) {
 		log.Printf("Received response for chat %d: %s", resp.ChatID, resp.ReplyText)
 		if s.bot != nil {
 			tgMsg := tgbotapi.NewMessage(resp.ChatID, resp.ReplyText)
+			tgMsg.ParseMode = "Markdown"
 			if _, err := s.bot.Send(tgMsg); err != nil {
-				log.Printf("[ERROR] Failed to send Telegram message to chat %d: %v", resp.ChatID, err)
+				log.Printf("[WARN] Failed to send Markdown message to chat %d (%v), retrying without ParseMode...", resp.ChatID, err)
+				tgMsg.ParseMode = ""
+				if _, err := s.bot.Send(tgMsg); err != nil {
+					log.Printf("[ERROR] Failed to send Telegram message to chat %d: %v", resp.ChatID, err)
+				} else {
+					log.Printf("Successfully sent plain text Telegram message to chat %d", resp.ChatID)
+				}
 			} else {
-				log.Printf("Successfully sent Telegram message to chat %d", resp.ChatID)
+				log.Printf("Successfully sent Markdown Telegram message to chat %d", resp.ChatID)
 			}
 		}
 	}
