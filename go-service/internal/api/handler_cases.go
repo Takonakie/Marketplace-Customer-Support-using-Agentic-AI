@@ -97,7 +97,16 @@ func (h *CaseHandler) UpdateCaseStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CaseHandler) ListCases(w http.ResponseWriter, r *http.Request) {
-	cases, err := h.caseRepo.GetAllCases(r.Context())
+	customerID := r.URL.Query().Get("customer_id")
+	var cases []model.Case
+	var err error
+
+	if customerID != "" {
+		cases, err = h.caseRepo.GetCasesByCustomerID(r.Context(), customerID)
+	} else {
+		cases, err = h.caseRepo.GetAllCases(r.Context())
+	}
+
 	if err != nil {
 		http.Error(w, `{"error":"failed to fetch cases"}`, http.StatusInternalServerError)
 		return

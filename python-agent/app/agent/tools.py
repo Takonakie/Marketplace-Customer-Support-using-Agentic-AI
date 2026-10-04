@@ -59,6 +59,25 @@ def create_case(name: str, criticality: str, description: str, division: str, cu
         return {"error": "Respons layanan case tidak valid"}
 
 
+def query_cases(customer_id: str) -> dict | list:
+    data = _get_json(f"{settings.GO_SERVICE_URL}/api/cases", {"customer_id": customer_id})
+    if isinstance(data, list):
+        return [
+            {
+                "case_id": c.get("uuid"),
+                "name": c.get("name"),
+                "status": c.get("status"),
+                "datetime": c.get("datetime"),
+                "description": c.get("description"),
+                "resolution": c.get("resolution", "")
+            }
+            for c in data
+        ]
+    if data is None:
+        return []
+    return data
+
+
 def search_sop(query: str) -> str:
     try:
         docs = search_docs(query)
@@ -70,7 +89,7 @@ def search_sop(query: str) -> str:
 
 
 # Tool yang membutuhkan identitas customer -> di-inject oleh core, bukan oleh LLM
-CUSTOMER_SCOPED_TOOLS = {"query_orders", "get_purchase_total", "create_case"}
+CUSTOMER_SCOPED_TOOLS = {"query_orders", "get_purchase_total", "create_case", "query_cases"}
 
 TOOL_DEFINITIONS = [
     {
@@ -86,6 +105,14 @@ TOOL_DEFINITIONS = [
         "function": {
             "name": "get_purchase_total",
             "description": "Mendapatkan total akumulasi pembelian customer yang sedang chat (identitas customer otomatis dari sistem)",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_cases",
+            "description": "Mengecek daftar status tiket komplain/kasus milik customer (misal statusnya open, in_progress, resolved, atau closed)",
             "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
@@ -125,6 +152,7 @@ TOOL_DEFINITIONS = [
 TOOL_MAP = {
     "query_orders": query_orders,
     "get_purchase_total": get_purchase_total,
+    "query_cases": query_cases,
     "create_case": create_case,
     "search_sop": search_sop
 }

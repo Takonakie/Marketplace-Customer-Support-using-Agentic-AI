@@ -56,3 +56,33 @@ func (r *CaseRepo) GetAllCases(ctx context.Context) ([]model.Case, error) {
 	}
 	return cases, nil
 }
+
+func (r *CaseRepo) GetCasesByCustomerID(ctx context.Context, customerID string) ([]model.Case, error) {
+	cleanID := customerID
+	if len(cleanID) > 3 && cleanID[:3] == "tg_" {
+		cleanID = cleanID[3:]
+	}
+	query := `SELECT uuid, name, datetime, criticality, description, COALESCE(assign_to::text, ''), status, COALESCE(resolution, '') 
+	          FROM cases 
+	          WHERE description ILIKE $1 OR description ILIKE $2 
+	          ORDER BY datetime DESC`
+	rows, err := r.pool.Query(ctx, query, "%"+customerID+"%", "%"+cleanID+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var cases []model.Case
+	for rows.Next() {
+		var c model.Case
+		var assignTo string
+		if err := rows.Scan(&c.UUID, &c.Name, &c.Datetime, &c.Criticality, &c.Description, &assignTo, &c.Status, &c.Resolution); err != nil {
+			return nil, err
+		}
+		if assignTo != "" {
+			c.AssignTo = &assignTo
+		}
+		cases = append(cases, c)
+	}
+	return cases, nil
+}
