@@ -36,7 +36,13 @@ func (r *CaseRepo) UpdateCaseStatus(ctx context.Context, uuid, status string) er
 }
 
 func (r *CaseRepo) GetAllCases(ctx context.Context) ([]model.Case, error) {
-	rows, err := r.pool.Query(ctx, `SELECT uuid, name, datetime, criticality, description, COALESCE(assign_to::text, ''), status, COALESCE(resolution, '') FROM cases ORDER BY datetime DESC`)
+	query := `SELECT c.uuid, c.name, c.datetime, c.criticality, c.description, 
+	                 COALESCE(u.name || ' (' || u.division || ')', c.assign_to::text, ''), 
+	                 c.status, COALESCE(c.resolution, '') 
+	          FROM cases c 
+	          LEFT JOIN users u ON c.assign_to = u.uuid 
+	          ORDER BY c.datetime DESC`
+	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +68,13 @@ func (r *CaseRepo) GetCasesByCustomerID(ctx context.Context, customerID string) 
 	if len(cleanID) > 3 && cleanID[:3] == "tg_" {
 		cleanID = cleanID[3:]
 	}
-	query := `SELECT uuid, name, datetime, criticality, description, COALESCE(assign_to::text, ''), status, COALESCE(resolution, '') 
-	          FROM cases 
-	          WHERE description ILIKE $1 OR description ILIKE $2 
-	          ORDER BY datetime DESC`
+	query := `SELECT c.uuid, c.name, c.datetime, c.criticality, c.description, 
+	                 COALESCE(u.name || ' (' || u.division || ')', c.assign_to::text, ''), 
+	                 c.status, COALESCE(c.resolution, '') 
+	          FROM cases c 
+	          LEFT JOIN users u ON c.assign_to = u.uuid 
+	          WHERE c.description ILIKE $1 OR c.description ILIKE $2 
+	          ORDER BY c.datetime DESC`
 	rows, err := r.pool.Query(ctx, query, "%"+customerID+"%", "%"+cleanID+"%")
 	if err != nil {
 		return nil, err

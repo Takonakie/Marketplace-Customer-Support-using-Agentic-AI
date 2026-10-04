@@ -492,6 +492,9 @@
             <button class="tab-btn active" onclick="switchTab('casesTab', this)">
                 📋 Case Management
             </button>
+            <button class="tab-btn" onclick="switchTab('usersTab', this)">
+                👥 Kelola Staf & Divisi
+            </button>
             <button class="tab-btn" onclick="switchTab('metricsTab', this)">
                 📊 Monitoring & Traces
             </button>
@@ -516,6 +519,7 @@
                             <tr>
                                 <th>Judul Tiket</th>
                                 <th>Criticality</th>
+                                <th>Penanggung Jawab (Divisi)</th>
                                 <th>Tanggal</th>
                                 <th>Status</th>
                                 <th>Aksi Update Status</th>
@@ -523,7 +527,7 @@
                         </thead>
                         <tbody id="caseTableBody">
                             <tr>
-                                <td colspan="5" style="text-align: center; color: var(--text-muted);">Memuat data tiket...</td>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted);">Memuat data tiket...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -544,7 +548,55 @@
             </div>
         </div>
 
-        <!-- TAB 2: MONITORING & TRACES -->
+        <!-- TAB 2: KELOLA STAF & DIVISI (USER & ROLE MANAGEMENT) -->
+        <div id="usersTab" class="tab-content">
+            <div class="grid-2col">
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Tambah Staf & Assign Divisi / Role</div>
+                    </div>
+                    <div id="userToast" class="alert-toast"></div>
+                    <form id="userForm" onsubmit="handleCreateUser(event)">
+                        <div class="form-group">
+                            <label for="userName">Nama Staf / Agent CS</label>
+                            <input type="text" id="userName" class="form-control" placeholder="Contoh: Rina Melati" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userDivision">Penugasan Divisi / Role</label>
+                            <select id="userDivision" class="form-control" required>
+                                <option value="payment">payment (Divisi Pembayaran / Refund)</option>
+                                <option value="shipping">shipping (Divisi Kurir & Pengiriman)</option>
+                                <option value="IT">IT (Divisi Kendala Sistem & Aplikasi)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">➕ Tambah Staf Baru & Assign Divisi</button>
+                    </form>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Daftar Staf Terdaftar per Divisi</div>
+                        <button class="btn-refresh" onclick="loadUsers()">🔄 Refresh</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama Staf</th>
+                                <th>Divisi / Role</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted);">Memuat data staf...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: MONITORING & TRACES -->
         <div id="metricsTab" class="tab-content">
             <div class="card-panel" style="margin-bottom: 24px;">
                 <div class="panel-header">
@@ -572,7 +624,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: KNOWLEDGE BASE & SOP MANAGEMENT -->
+        <!-- TAB 4: KNOWLEDGE BASE & SOP MANAGEMENT -->
         <div id="sopTab" class="tab-content">
             <div class="grid-2col">
                 <!-- Upload/Add New SOP Form -->
@@ -628,7 +680,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: ORDER DATA SEEDER -->
+        <!-- TAB 5: ORDER DATA SEEDER -->
         <div id="ordersTab" class="tab-content">
             <div class="grid-2col">
                 <div class="card-panel">
@@ -705,9 +757,81 @@
             document.getElementById(tabId).classList.add('active');
             element.classList.add('active');
 
+            if (tabId === 'usersTab') loadUsers();
             if (tabId === 'sopTab') loadDocs();
             if (tabId === 'ordersTab') loadSeededOrders();
             if (tabId === 'metricsTab') loadMetrics();
+        }
+
+        // ---- USER & ROLE / DIVISION MANAGEMENT ----
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = '';
+
+                if (!users || users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Belum ada staf terdaftar.</td></tr>';
+                    return;
+                }
+
+                users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${escapeHtml(u.name)}</strong></td>
+                        <td><span class="code-tag">${escapeHtml(u.division)}</span></td>
+                        <td>
+                            <button class="btn-danger" onclick="deleteUser('${u.uuid}', '${escapeHtml(u.name)}')">🗑️ Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Gagal memuat data users:", err);
+            }
+        }
+
+        async function handleCreateUser(e) {
+            e.preventDefault();
+            const name = document.getElementById('userName').value.trim();
+            const division = document.getElementById('userDivision').value;
+            const toast = document.getElementById('userToast');
+
+            try {
+                const res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, division })
+                });
+
+                if (res.ok) {
+                    showToast(toast, `✅ Staf "${name}" berhasil ditambahkan & diassign ke divisi ${division}!`, 'success');
+                    document.getElementById('userForm').reset();
+                    loadUsers();
+                } else {
+                    showToast(toast, '❌ Gagal menambahkan staf baru', 'error');
+                }
+            } catch (err) {
+                showToast(toast, '❌ Terjadi kesalahan jaringan', 'error');
+            }
+        }
+
+        async function deleteUser(uuid, name) {
+            if (!confirm(`Apakah Anda yakin ingin menghapus staf "${name}"?`)) return;
+
+            const toast = document.getElementById('userToast');
+            try {
+                const res = await fetch(`/api/users/${uuid}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast(toast, `✅ Staf "${name}" berhasil dihapus.`, 'success');
+                    loadUsers();
+                } else {
+                    showToast(toast, '❌ Gagal menghapus staf', 'error');
+                }
+            } catch (err) {
+                showToast(toast, '❌ Terjadi kesalahan jaringan', 'error');
+            }
         }
 
         // ---- MONITORING & METRICS TELEMETRY ----
@@ -746,13 +870,11 @@
                 traces.forEach(t => {
                     const tr = document.createElement('tr');
                     
-                    // Format tool calls string
                     let toolCallsStr = '-';
                     if (t.tool_calls && t.tool_calls.length > 0) {
                         toolCallsStr = t.tool_calls.map(tc => `<span class="code-tag">${escapeHtml(tc.tool)} (${Math.round(tc.duration_ms)}ms)</span>`).join(' ');
                     }
 
-                    // Format error status
                     let statusBadge = '<span class="badge-status status-resolved">OK</span>';
                     if (t.errors && t.errors.length > 0) {
                         statusBadge = `<span class="badge-status status-error">${t.errors.length} Error</span>`;
@@ -792,7 +914,7 @@
                 let resolvedCount = 0;
 
                 if (!cases || cases.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Belum ada tiket kasus yang terdaftar.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Belum ada tiket kasus yang terdaftar.</td></tr>';
                 } else {
                     cases.forEach(c => {
                         if (c.status === 'open') openCount++;
@@ -805,6 +927,7 @@
                                 <small style="color: var(--text-muted);">${escapeHtml(c.description || '-')}</small>
                             </td>
                             <td><span style="font-weight: 700; color: ${getCriticalityColor(c.criticality)}">${escapeHtml((c.criticality || 'low').toUpperCase())}</span></td>
+                            <td><span class="code-tag">${escapeHtml(c.assign_to || 'Belum ditugaskan')}</span></td>
                             <td>${new Date(c.datetime).toLocaleString('id-ID')}</td>
                             <td><span class="badge-status status-${c.status}">${escapeHtml(c.status)}</span></td>
                             <td>
@@ -1062,7 +1185,6 @@
         // Auto load initial data
         loadCases();
         loadMetrics();
-        // Polling update every 3 seconds for real-time monitoring telemetries
         setInterval(() => {
             loadCases();
             loadMetrics();

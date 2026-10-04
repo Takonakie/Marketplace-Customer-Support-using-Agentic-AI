@@ -43,6 +43,8 @@ func NewRouter(orderRepo *repository.OrderRepo, caseRepo *repository.CaseRepo, u
 
 		r.Get("/metrics", metricsH.GetMetrics)
 		r.Get("/users", userH.GetUsers)
+		r.Post("/users", userH.CreateUser)
+		r.Delete("/users/{uuid}", userH.DeleteUser)
 	})
 
 	workDir, _ := os.Getwd()
