@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"time"
 
+	"github.com/agenticsdk/go-service/internal/metrics"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/redis/go-redis/v9"
 )
@@ -84,6 +86,10 @@ func (s *BotService) listenOutgoing(ctx context.Context) {
 			continue
 		}
 
+		// Record monitoring trace metrics
+		trace := parseTraceLog(resp)
+		metrics.GlobalTracker.RecordTrace(trace)
+
 		log.Printf("Received response for chat %d: %s", resp.ChatID, resp.ReplyText)
 		if s.bot != nil {
 			tgMsg := tgbotapi.NewMessage(resp.ChatID, resp.ReplyText)
@@ -101,4 +107,65 @@ func (s *BotService) listenOutgoing(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func parseTraceLog(resp TelegramResponse) metrics.TraceLog {
+	trace := metrics.TraceLog{
+		MessageID: resp.MessageID,
+		ChatID:    resp.ChatID,
+		Timestamp: time.Now(),
+	}
+
+	meta := resp.Metadata
+	if meta == nil {
+		return trace
+	}
+
+	if tid, ok := meta["trace_id"].(string); ok {
+		trace.TraceID = tid
+	}
+	if lat, ok := meta["latency_ms"].(float64); ok {
+		trace.LatencyMS = lat
+	}
+
+	if tu, ok := meta["token_usage"].(map[string]interface{}); ok {
+		if pt, ok := tu["prompt_tokens"].(float64); ok {
+			trace.TokenUsage.PromptTokens = int(pt)
+		}
+		if ct, ok := tu["completion_tokens"].(float64); ok {
+			trace.TokenUsage.CompletionTokens = int(ct)
+		}
+	}
+
+	if tcs, ok := meta["tool_calls"].([]interface{}); ok {
+		for _, rawTc := range tcs {
+			if tcMap, ok := rawTc.(map[string]interface{}); ok {
+				var tc metrics.ToolCallLog
+				if tName, ok := tcMap["tool"].(string); ok {
+					tc.Tool = tName
+				}
+				if dur, ok := tcMap["duration_ms"].(float64); ok {
+					tc.DurationMS = dur
+				}
+				trace.ToolCalls = append(trace.ToolCalls, tc)
+			}
+		}
+	}
+
+	if errs, ok := meta["errors"].([]interface{}); ok {
+		for _, rawErr := range errs {
+			if errMap, ok := rawErr.(map[string]interface{}); ok {
+				var el metrics.ErrorLog
+				if eMsg, ok := errMap["error"].(string); ok {
+					el.Error = eMsg
+				}
+				if ts, ok := errMap["timestamp"].(float64); ok {
+					el.Timestamp = ts
+				}
+				trace.Errors = append(trace.Errors, el)
+			}
+		}
+	}
+
+	return trace
 }

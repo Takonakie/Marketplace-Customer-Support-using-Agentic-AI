@@ -24,6 +24,7 @@ func NewRouter(orderRepo *repository.OrderRepo, caseRepo *repository.CaseRepo, u
 	caseH := NewCaseHandler(caseRepo, userRepo)
 	userH := NewUserHandler(userRepo)
 	docH := NewDocHandler(docRepo)
+	metricsH := NewMetricsHandler()
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/orders", orderH.GetOrders)
@@ -40,6 +41,7 @@ func NewRouter(orderRepo *repository.OrderRepo, caseRepo *repository.CaseRepo, u
 		r.Put("/docs/{uuid}", docH.UpdateDoc)
 		r.Delete("/docs/{uuid}", docH.DeleteDoc)
 
+		r.Get("/metrics", metricsH.GetMetrics)
 		r.Get("/users", userH.GetUsers)
 	})
 
