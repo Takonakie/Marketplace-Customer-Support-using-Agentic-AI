@@ -100,10 +100,12 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
                         import inspect
                         from app.agent.tools import CUSTOMER_SCOPED_TOOLS
                         if fn_name in CUSTOMER_SCOPED_TOOLS:
-                            sig = inspect.signature(tool_fn)
-                            if "customer_id" in sig.parameters:
-                                args["customer_id"] = f"tg_{chat_id}"
-                        res = tool_fn(**args)
+                            args["customer_id"] = f"tg_{chat_id}"
+                        
+                        # Filter argumen agar hanya melempar parameter yang memang diterima oleh fungsi
+                        sig = inspect.signature(tool_fn)
+                        valid_args = {k: v for k, v in args.items() if k in sig.parameters}
+                        res = tool_fn(**valid_args)
                     else:
                         res = {"error": "Tool not found"}
                     duration_ms = (time.time() - start_t) * 1000
