@@ -10,5 +10,6 @@ FROM alpine:3.19
 RUN apk add --no-cache ca-certificates wget
 WORKDIR /app
 COPY --from=builder /app/main .
+COPY --from=builder /app/static ./static
 EXPOSE 8080
 CMD ["./main"]
