@@ -18,12 +18,15 @@ func NewOrderHandler(repo *repository.OrderRepo) *OrderHandler {
 
 func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 	customerID := r.URL.Query().Get("customer_id")
+	var orders []model.Order
+	var err error
+
 	if customerID == "" {
-		http.Error(w, `{"error":"customer_id is required"}`, http.StatusBadRequest)
-		return
+		orders, err = h.repo.ListAllOrders(r.Context())
+	} else {
+		orders, err = h.repo.GetOrdersByCustomerID(r.Context(), customerID)
 	}
 
-	orders, err := h.repo.GetOrdersByCustomerID(r.Context(), customerID)
 	if err != nil {
 		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
 		return

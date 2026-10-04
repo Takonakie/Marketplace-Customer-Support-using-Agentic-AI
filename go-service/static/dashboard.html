@@ -609,7 +609,10 @@
                     <form id="orderForm" onsubmit="handleCreateOrder(event)">
                         <div class="form-group">
                             <label for="custID">Customer ID (Telegram Chat ID atau No HP)</label>
-                            <input type="text" id="custID" class="form-control" placeholder="Contoh: 123456789 atau user_budi" required>
+                            <input type="text" id="custID" class="form-control" placeholder="Misal: 123456789 atau tg_123456789" required>
+                            <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">
+                                💡 Keterangan: Anda dapat memasukkan ID angka murni (seperti <code>123456789</code>) atau dengan awalan <code>tg_123456789</code>. Sistem secara otomatis mencocokkan keduanya saat bot memproses pesan pengguna!
+                            </small>
                         </div>
                         <div class="form-group">
                             <label for="prodName">Nama Produk</label>
@@ -638,15 +641,24 @@
 
                 <div class="card-panel">
                     <div class="panel-header">
-                        <div class="panel-title">Petunjuk Penggunaan Data Seeder</div>
+                        <div class="panel-title">Daftar Data Pesanan (Recent Seeded Orders)</div>
+                        <button class="btn-refresh" onclick="loadSeededOrders()">🔄 Refresh</button>
                     </div>
-                    <div style="font-size: 14px; color: var(--text-muted); line-height: 1.6;">
-                        <p style="margin-bottom: 12px;">Tool ini memungkinkan Tim Admin CS untuk membuat data pesanan dummy dengan cepat untuk pengujian AI Agent.</p>
-                        <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-                            <li>Gunakan Customer ID pengguna Telegram untuk menguji perintah bot <code>"cek status pesanan saya"</code>.</li>
-                            <li>Buka Telegram bot dan kirimkan pesan komplain untuk memverifikasi kecerdasan RAG & Tool Call Agent.</li>
-                        </ul>
-                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer ID</th>
+                                <th>Produk</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--text-muted);">Memuat daftar pesanan...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -664,6 +676,7 @@
             element.classList.add('active');
 
             if (tabId === 'sopTab') loadDocs();
+            if (tabId === 'ordersTab') loadSeededOrders();
         }
 
         // ---- CASES MANAGEMENT ----
@@ -873,13 +886,40 @@
         }
 
         // ---- ORDER SEEDER ----
+        async function loadSeededOrders() {
+            try {
+                const res = await fetch('/api/orders');
+                const orders = await res.json();
+                const tbody = document.getElementById('orderTableBody');
+                tbody.innerHTML = '';
+
+                if (!orders || orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada data pesanan uji coba.</td></tr>';
+                    return;
+                }
+
+                orders.forEach(o => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><code>${escapeHtml(o.customer_id)}</code></td>
+                        <td><strong>${escapeHtml(o.product_name)}</strong></td>
+                        <td>Rp ${Number(o.amount).toLocaleString('id-ID')}</td>
+                        <td><span class="badge-status status-resolved">${escapeHtml(o.status)}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Gagal memuat data orders:", err);
+            }
+        }
+
         async function handleCreateOrder(e) {
             e.preventDefault();
-            const customer_id = document.getElementById('custID').value;
-            const product_name = document.getElementById('prodName').value;
+            const customer_id = document.getElementById('custID').value.trim();
+            const product_name = document.getElementById('prodName').value.trim();
             const amount = parseInt(document.getElementById('amount').value);
             const status = document.getElementById('status').value;
-            const tracking_id = document.getElementById('trackingID').value;
+            const tracking_id = document.getElementById('trackingID').value.trim();
             const toast = document.getElementById('orderToast');
 
             try {
@@ -892,6 +932,7 @@
                 if (res.ok) {
                     showToast(toast, '✅ Pesanan berhasil dibuat & masuk database!', 'success');
                     document.getElementById('orderForm').reset();
+                    loadSeededOrders();
                 } else {
                     showToast(toast, '❌ Gagal membuat pesanan', 'error');
                 }
