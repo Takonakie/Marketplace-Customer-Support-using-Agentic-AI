@@ -65,19 +65,9 @@ OPENAI_EMBEDDING_BASE_URL=https://openrouter.ai/api/v1
 docker-compose up --build -d
 ```
 
-### 4. Seed Database & Embed SOP Documents
+### 4. Automated Database Migration, Seeding & Vector Embedding (1 Command!)
 ```bash
-# Seed initial tables
-docker exec -i agentic_postgres psql -U user -d agenticsdk < db/migrations/001_create_users.sql
-docker exec -i agentic_postgres psql -U user -d agenticsdk < db/migrations/002_create_docs.sql
-docker exec -i agentic_postgres psql -U user -d agenticsdk < db/migrations/003_create_orders.sql
-docker exec -i agentic_postgres psql -U user -d agenticsdk < db/migrations/004_create_cases.sql
-docker exec -i agentic_postgres psql -U user -d agenticsdk < scripts/seed_users.sql
-docker exec -i agentic_postgres psql -U user -d agenticsdk < scripts/seed_docs.sql
-docker exec -i agentic_postgres psql -U user -d agenticsdk < scripts/seed_orders.sql
-
-# Run SOP Vector Embedder
-docker exec -it agentic_python_agent python -m app.rag.loader
+bash scripts/setup.sh
 ```
 
 ---
