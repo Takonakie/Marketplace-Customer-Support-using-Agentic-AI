@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/agenticsdk/go-service/internal/metrics"
@@ -75,6 +77,27 @@ func (s *BotService) Start(ctx context.Context) {
 	}
 }
 
+func formatToTelegramHTML(text string) string {
+	// Escape HTML special characters
+	text = strings.ReplaceAll(text, "&", "&amp;")
+	text = strings.ReplaceAll(text, "<", "&lt;")
+	text = strings.ReplaceAll(text, ">", "&gt;")
+
+	// Convert **bold** to <b>bold</b>
+	reBoldDouble := regexp.MustCompile(`\*\*(.*?)\*\*`)
+	text = reBoldDouble.ReplaceAllString(text, "<b>$1</b>")
+
+	// Convert __bold__ to <b>bold</b>
+	reBoldUnder := regexp.MustCompile(`__(.*?)__`)
+	text = reBoldUnder.ReplaceAllString(text, "<b>$1</b>")
+
+	// Convert `code` to <code>code</code>
+	reCode := regexp.MustCompile("`([^`]+)`")
+	text = reCode.ReplaceAllString(text, "<code>$1</code>")
+
+	return text
+}
+
 func (s *BotService) listenOutgoing(ctx context.Context) {
 	sub := s.rdb.Subscribe(ctx, "outgoing_messages")
 	ch := sub.Channel()
@@ -92,18 +115,26 @@ func (s *BotService) listenOutgoing(ctx context.Context) {
 
 		log.Printf("Received response for chat %d: %s", resp.ChatID, resp.ReplyText)
 		if s.bot != nil {
-			tgMsg := tgbotapi.NewMessage(resp.ChatID, resp.ReplyText)
-			tgMsg.ParseMode = "Markdown"
+			htmlContent := formatToTelegramHTML(resp.ReplyText)
+			tgMsg := tgbotapi.NewMessage(resp.ChatID, htmlContent)
+			tgMsg.ParseMode = "HTML"
 			if _, err := s.bot.Send(tgMsg); err != nil {
-				log.Printf("[WARN] Failed to send Markdown message to chat %d (%v), retrying without ParseMode...", resp.ChatID, err)
-				tgMsg.ParseMode = ""
+				log.Printf("[WARN] Failed to send HTML message to chat %d (%v), retrying with Markdown...", resp.ChatID, err)
+				tgMsg.Text = resp.ReplyText
+				tgMsg.ParseMode = "Markdown"
 				if _, err := s.bot.Send(tgMsg); err != nil {
-					log.Printf("[ERROR] Failed to send Telegram message to chat %d: %v", resp.ChatID, err)
+					log.Printf("[WARN] Failed to send Markdown message to chat %d (%v), retrying plain text...", resp.ChatID, err)
+					tgMsg.ParseMode = ""
+					if _, err := s.bot.Send(tgMsg); err != nil {
+						log.Printf("[ERROR] Failed to send Telegram message to chat %d: %v", resp.ChatID, err)
+					} else {
+						log.Printf("Successfully sent plain text Telegram message to chat %d", resp.ChatID)
+					}
 				} else {
-					log.Printf("Successfully sent plain text Telegram message to chat %d", resp.ChatID)
+					log.Printf("Successfully sent Markdown Telegram message to chat %d", resp.ChatID)
 				}
 			} else {
-				log.Printf("Successfully sent Markdown Telegram message to chat %d", resp.ChatID)
+				log.Printf("Successfully sent HTML Telegram message to chat %d", resp.ChatID)
 			}
 		}
 	}
