@@ -26,14 +26,16 @@ type TokenUsage struct {
 }
 
 type TraceLog struct {
-	TraceID    string        `json:"trace_id"`
-	MessageID  string        `json:"message_id"`
-	ChatID     int64         `json:"chat_id"`
-	LatencyMS  float64       `json:"latency_ms"`
-	TokenUsage TokenUsage    `json:"token_usage"`
-	ToolCalls  []ToolCallLog `json:"tool_calls"`
-	Errors     []ErrorLog    `json:"errors"`
-	Timestamp  time.Time     `json:"timestamp"`
+	TraceID     string        `json:"trace_id"`
+	MessageID   string        `json:"message_id"`
+	ChatID      int64         `json:"chat_id"`
+	UserMessage string        `json:"user_message"`
+	AIResponse  string        `json:"ai_response"`
+	LatencyMS   float64       `json:"latency_ms"`
+	TokenUsage  TokenUsage    `json:"token_usage"`
+	ToolCalls   []ToolCallLog `json:"tool_calls"`
+	Errors      []ErrorLog    `json:"errors"`
+	Timestamp   time.Time     `json:"timestamp"`
 }
 
 type SystemMetrics struct {

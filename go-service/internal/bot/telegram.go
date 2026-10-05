@@ -111,9 +111,10 @@ func (s *BotService) listenOutgoing(ctx context.Context) {
 
 func parseTraceLog(resp TelegramResponse) metrics.TraceLog {
 	trace := metrics.TraceLog{
-		MessageID: resp.MessageID,
-		ChatID:    resp.ChatID,
-		Timestamp: time.Now(),
+		MessageID:  resp.MessageID,
+		ChatID:     resp.ChatID,
+		AIResponse: resp.ReplyText,
+		Timestamp:  time.Now(),
 	}
 
 	meta := resp.Metadata
@@ -126,6 +127,12 @@ func parseTraceLog(resp TelegramResponse) metrics.TraceLog {
 	}
 	if lat, ok := meta["latency_ms"].(float64); ok {
 		trace.LatencyMS = lat
+	}
+	if um, ok := meta["user_message"].(string); ok {
+		trace.UserMessage = um
+	}
+	if air, ok := meta["ai_response"].(string); ok && air != "" {
+		trace.AIResponse = air
 	}
 
 	if tu, ok := meta["token_usage"].(map[string]interface{}); ok {

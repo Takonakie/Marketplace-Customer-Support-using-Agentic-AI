@@ -969,6 +969,20 @@
                 </div>
             </div>
 
+            <div style="margin-bottom: 10px; font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                💬 User Input & AI Agent Response
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #a5b4fc; text-transform: uppercase; margin-bottom: 4px;">👤 Customer Input Message</div>
+                    <div id="modalUserMessage" style="font-size: 13px; color: #fff; white-space: pre-wrap;">-</div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; margin-bottom: 4px;">🤖 AI Agent Output Reply</div>
+                    <div id="modalAiResponse" style="font-size: 13px; color: #fff; white-space: pre-wrap;">-</div>
+                </div>
+            </div>
+
             <div style="margin-bottom: 12px; font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
                 🛠️ Executed Tool Calls & Durations
             </div>
@@ -1260,6 +1274,9 @@
             const cTok = t.token_usage ? t.token_usage.completion_tokens : 0;
             document.getElementById('modalTokens').innerText = `${pTok + cTok} (Prompt: ${pTok}, Completion: ${cTok})`;
             document.getElementById('modalTimestamp').innerText = new Date(t.timestamp).toLocaleString('id-ID');
+
+            document.getElementById('modalUserMessage').innerText = t.user_message || '(Kosong / Tidak terekam)';
+            document.getElementById('modalAiResponse').innerText = t.ai_response || '(Kosong / Tidak terekam)';
 
             const toolCallsDiv = document.getElementById('modalToolCallsList');
             if (t.tool_calls && t.tool_calls.length > 0) {

@@ -9,13 +9,14 @@ from app.monitoring.tracker import MonitoringTracker
 from app.chat_history.manager import ChatHistoryManager
 
 async def handle_message(message: dict, history_manager: ChatHistoryManager) -> dict:
-    tracker = MonitoringTracker(message.get("message_id", ""))
     chat_id = message["chat_id"]
     customer_name = message.get("customer_name", "Customer")
     text = message.get("text", "")
+    tracker = MonitoringTracker(message.get("message_id", ""), user_message=text)
 
     guard_err = validate_input(text)
     if guard_err:
+        tracker.set_ai_response(guard_err)
         return {
             "message_id": message.get("message_id"),
             "chat_id": chat_id,
@@ -36,6 +37,7 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
         reply = f"Hai {customer_name}, sistem menerima pesan Anda: '{text}'. (Dev Mode - API Key belum diisi)"
         history_manager.append_message(chat_id, "user", text)
         history_manager.append_message(chat_id, "assistant", reply)
+        tracker.set_ai_response(reply)
         return {
             "message_id": message.get("message_id"),
             "chat_id": chat_id,
@@ -123,6 +125,7 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
                 history_manager.append_message(chat_id, "user", text)
                 history_manager.append_message(chat_id, "assistant", reply)
 
+                tracker.set_ai_response(reply)
                 return {
                     "message_id": message.get("message_id"),
                     "chat_id": chat_id,
@@ -131,10 +134,12 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
                 }
     except Exception as e:
         print(f"[ERROR] Agent handle_message exception: {e}", flush=True)
+        err_msg = "Maaf, terjadi kendala teknis saat memproses pesan Anda."
         tracker.record_error(str(e))
+        tracker.set_ai_response(err_msg)
         return {
             "message_id": message.get("message_id"),
             "chat_id": chat_id,
-            "reply_text": "Maaf, terjadi kendala teknis saat memproses pesan Anda.",
+            "reply_text": err_msg,
             "metadata": tracker.finalize()
         }
