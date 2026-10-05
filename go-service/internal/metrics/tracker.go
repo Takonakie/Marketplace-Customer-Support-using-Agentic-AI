@@ -1,8 +1,13 @@
 package metrics
 
 import (
+	"context"
+	"encoding/json"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type ToolCallLog struct {
@@ -44,6 +49,7 @@ type SystemMetrics struct {
 
 type Tracker struct {
 	mu           sync.RWMutex
+	rdb          *redis.Client
 	totalReqs    int64
 	totalTokens  int64
 	totalPrompt  int64
@@ -63,9 +69,49 @@ func NewTracker() *Tracker {
 	}
 }
 
-func (t *Tracker) RecordTrace(trace TraceLog) {
+func (t *Tracker) InitRedis(rdb *redis.Client) {
+	if rdb == nil {
+		return
+	}
+	t.mu.Lock()
+	t.rdb = rdb
+	t.mu.Unlock()
+
+	ctx := context.Background()
+	// Restore traces from Redis
+	vals, err := rdb.LRange(ctx, "metrics:recent_traces", 0, 99).Result()
+	if err != nil {
+		log.Printf("[METRICS] Failed to load traces from Redis: %v", err)
+		return
+	}
+
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
+	t.recentTraces = make([]TraceLog, 0, len(vals))
+	for _, val := range vals {
+		var tr TraceLog
+		if err := json.Unmarshal([]byte(val), &tr); err == nil {
+			t.recentTraces = append(t.recentTraces, tr)
+			t.totalReqs++
+			t.sumLatency += tr.LatencyMS
+			tot := tr.TokenUsage.PromptTokens + tr.TokenUsage.CompletionTokens
+			t.totalTokens += int64(tot)
+			t.totalPrompt += int64(tr.TokenUsage.PromptTokens)
+			t.totalCompl += int64(tr.TokenUsage.CompletionTokens)
+			if len(tr.Errors) > 0 {
+				t.totalErrors += int64(len(tr.Errors))
+			}
+			for _, tc := range tr.ToolCalls {
+				t.toolCounts[tc.Tool]++
+			}
+		}
+	}
+	log.Printf("[METRICS] Restored %d telemetry trace logs from Redis", len(t.recentTraces))
+}
+
+func (t *Tracker) RecordTrace(trace TraceLog) {
+	t.mu.Lock()
 
 	t.totalReqs++
 	t.sumLatency += trace.LatencyMS
@@ -90,6 +136,23 @@ func (t *Tracker) RecordTrace(trace TraceLog) {
 	t.recentTraces = append([]TraceLog{trace}, t.recentTraces...)
 	if len(t.recentTraces) > 100 {
 		t.recentTraces = t.recentTraces[:100]
+	}
+
+	rdb := t.rdb
+	t.mu.Unlock()
+
+	// Persist to Redis asynchronously if Redis client is attached
+	if rdb != nil {
+		go func(tr TraceLog) {
+			data, err := json.Marshal(tr)
+			if err == nil {
+				ctx := context.Background()
+				pipe := rdb.Pipeline()
+				pipe.LPush(ctx, "metrics:recent_traces", data)
+				pipe.LTrim(ctx, "metrics:recent_traces", 0, 99)
+				pipe.Exec(ctx)
+			}
+		}(trace)
 	}
 }
 
@@ -121,3 +184,4 @@ func (t *Tracker) GetMetrics() SystemMetrics {
 		RecentTraces:      tracesCopy,
 	}
 }
+

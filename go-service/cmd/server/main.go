@@ -12,6 +12,7 @@ import (
 	"github.com/agenticsdk/go-service/internal/api"
 	"github.com/agenticsdk/go-service/internal/bot"
 	"github.com/agenticsdk/go-service/internal/config"
+	"github.com/agenticsdk/go-service/internal/metrics"
 	"github.com/agenticsdk/go-service/internal/queue"
 	"github.com/agenticsdk/go-service/internal/repository"
 )
@@ -39,6 +40,7 @@ func main() {
 		log.Printf("Warning: Redis connection failed: %v", err)
 	} else {
 		log.Println("Redis client established")
+		metrics.GlobalTracker.InitRedis(rdb)
 	}
 
 	var orderRepo *repository.OrderRepo

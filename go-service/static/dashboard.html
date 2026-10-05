@@ -981,6 +981,46 @@
         </div>
     </div>
 
+    <!-- Case Detail Floating Window Modal -->
+    <div id="caseDetailModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">📋 Rincian Tiket Komplain Pelanggan</div>
+                <button class="modal-close" onclick="closeCaseDetailModal()">✕</button>
+            </div>
+            
+            <div class="trace-detail-grid">
+                <div class="trace-detail-card" style="grid-column: span 2;">
+                    <div class="trace-detail-label">Judul Tiket Kasus</div>
+                    <div class="trace-detail-value" id="caseModalTitle" style="font-size: 15px; color: #fff;">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Tingkat Criticality</div>
+                    <div class="trace-detail-value" id="caseModalCriticality">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Penanggung Jawab (Divisi)</div>
+                    <div class="trace-detail-value" id="caseModalAssignTo" style="color: var(--accent-cyan);">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Tanggal Pembuatan</div>
+                    <div class="trace-detail-value" id="caseModalDate">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Status Tiket</div>
+                    <div class="trace-detail-value" id="caseModalStatus">-</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                📝 Deskripsi Lengkap Komplain
+            </div>
+            <div id="caseModalDescription" class="json-container" style="color: var(--text-main); font-family: inherit; font-size: 14px; line-height: 1.6; white-space: pre-wrap; background: rgba(15, 23, 42, 0.7);">
+                -
+            </div>
+        </div>
+    </div>
+
     <script>
         let cachedDocs = [];
         let allCases = [];
@@ -1274,8 +1314,10 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
-                        <strong>${escapeHtml(c.name)}</strong><br>
-                        <small style="color: var(--text-muted);">${escapeHtml(c.description || '-')}</small>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <strong>${escapeHtml(c.name)}</strong>
+                            <button class="btn-action" style="padding: 4px 10px; font-size: 11px; white-space: nowrap;" onclick="openCaseDetailModal('${c.uuid}')">🔍 Detail</button>
+                        </div>
                     </td>
                     <td><span style="font-weight: 700; color: ${getCriticalityColor(c.criticality)}">${escapeHtml((c.criticality || 'low').toUpperCase())}</span></td>
                     <td><span class="code-tag">${escapeHtml(c.assign_to || 'Belum ditugaskan')}</span></td>
@@ -1294,6 +1336,24 @@
             });
 
             renderPaginationControls('casePagination', currentCasePage, totalPages, 'renderCasesPage');
+        }
+
+        function openCaseDetailModal(uuid) {
+            const c = allCases.find(item => item.uuid === uuid);
+            if (!c) return;
+
+            document.getElementById('caseModalTitle').innerText = c.name || '-';
+            document.getElementById('caseModalCriticality').innerHTML = `<span style="font-weight:700; color: ${getCriticalityColor(c.criticality)}">${escapeHtml((c.criticality || 'low').toUpperCase())}</span>`;
+            document.getElementById('caseModalAssignTo').innerText = c.assign_to || 'Belum ditugaskan';
+            document.getElementById('caseModalDate').innerText = new Date(c.datetime).toLocaleString('id-ID');
+            document.getElementById('caseModalStatus').innerHTML = `<span class="badge-status status-${c.status}">${escapeHtml(c.status)}</span>`;
+            document.getElementById('caseModalDescription').innerText = c.description || 'Tidak ada deskripsi rincian.';
+
+            document.getElementById('caseDetailModal').classList.add('active');
+        }
+
+        function closeCaseDetailModal() {
+            document.getElementById('caseDetailModal').classList.remove('active');
         }
 
         async function updateStatus(uuid, newStatus) {
