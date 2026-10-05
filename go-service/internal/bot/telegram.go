@@ -78,20 +78,28 @@ func (s *BotService) Start(ctx context.Context) {
 }
 
 func formatToTelegramHTML(text string) string {
-	// Escape HTML special characters
+	// 1. Escape HTML special characters
 	text = strings.ReplaceAll(text, "&", "&amp;")
 	text = strings.ReplaceAll(text, "<", "&lt;")
 	text = strings.ReplaceAll(text, ">", "&gt;")
 
-	// Convert **bold** to <b>bold</b>
+	// 2. Convert bullet points starting with '* ' or '- ' at beginning of lines to clean bullet symbol ('• ')
+	reBullet := regexp.MustCompile(`(?m)^[\*\-]\s+`)
+	text = reBullet.ReplaceAllString(text, "• ")
+
+	// 3. Convert **bold** to <b>bold</b>
 	reBoldDouble := regexp.MustCompile(`\*\*(.*?)\*\*`)
 	text = reBoldDouble.ReplaceAllString(text, "<b>$1</b>")
 
-	// Convert __bold__ to <b>bold</b>
+	// 4. Convert __bold__ to <b>bold</b>
 	reBoldUnder := regexp.MustCompile(`__(.*?)__`)
 	text = reBoldUnder.ReplaceAllString(text, "<b>$1</b>")
 
-	// Convert `code` to <code>code</code>
+	// 5. Convert *italic* to <i>italic</i>
+	reItalicSingle := regexp.MustCompile(`\*(.*?)\*`)
+	text = reItalicSingle.ReplaceAllString(text, "<i>$1</i>")
+
+	// 6. Convert `code` to <code>code</code>
 	reCode := regexp.MustCompile("`([^`]+)`")
 	text = reCode.ReplaceAllString(text, "<code>$1</code>")
 
