@@ -1,9 +1,11 @@
 import json
 import time
-from openai import OpenAI
+import asyncio
+import inspect
+from openai import AsyncOpenAI
 from app.config import settings
 from app.agent.prompts import build_system_prompt
-from app.agent.tools import TOOL_DEFINITIONS, TOOL_MAP
+from app.agent.tools import TOOL_DEFINITIONS, TOOL_MAP, CUSTOMER_SCOPED_TOOLS
 from app.agent.guardrails import validate_input, sanitize_output
 from app.monitoring.tracker import MonitoringTracker
 from app.chat_history.manager import ChatHistoryManager
@@ -45,15 +47,15 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
             "metadata": tracker.finalize()
         }
 
-    def call_llm(messages_payload):
-        # Percobaan panggilan ke Primary LLM (SK Guts) dengan failover ke Fallback LLM (OpenRouter)
+    async def call_llm(messages_payload):
+        # Async call to Primary LLM with automatic failover to Fallback LLM
         primary_kwargs = {"api_key": settings.LLM_API_KEY}
         if settings.LLM_BASE_URL:
             primary_kwargs["base_url"] = settings.LLM_BASE_URL
         
         try:
-            client = OpenAI(**primary_kwargs)
-            return client.chat.completions.create(
+            client = AsyncOpenAI(**primary_kwargs)
+            return await client.chat.completions.create(
                 model=settings.LLM_MODEL,
                 messages=messages_payload,
                 tools=TOOL_DEFINITIONS,
@@ -68,8 +70,8 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
             if settings.FALLBACK_LLM_BASE_URL:
                 fallback_kwargs["base_url"] = settings.FALLBACK_LLM_BASE_URL
 
-            fallback_client = OpenAI(**fallback_kwargs)
-            return fallback_client.chat.completions.create(
+            fallback_client = AsyncOpenAI(**fallback_kwargs)
+            return await fallback_client.chat.completions.create(
                 model=settings.FALLBACK_LLM_MODEL,
                 messages=messages_payload,
                 tools=TOOL_DEFINITIONS,
@@ -78,7 +80,7 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
 
     try:
         while True:
-            response = call_llm(messages)
+            response = await call_llm(messages)
             choice = response.choices[0]
             tracker.record_llm_call(response.usage)
 
@@ -92,32 +94,39 @@ async def handle_message(message: dict, history_manager: ChatHistoryManager) -> 
                     } for tc in choice.message.tool_calls
                 ]
                 messages.append(msg_dict)
-                for tool_call in choice.message.tool_calls:
+
+                async def execute_single_tool(tool_call):
                     fn_name = tool_call.function.name
                     args = json.loads(tool_call.function.arguments)
-
                     start_t = time.time()
                     tool_fn = TOOL_MAP.get(fn_name)
                     if tool_fn:
-                        import inspect
-                        from app.agent.tools import CUSTOMER_SCOPED_TOOLS
                         if fn_name in CUSTOMER_SCOPED_TOOLS:
                             args["customer_id"] = f"tg_{chat_id}"
                         
-                        # Filter argumen agar hanya melempar parameter yang memang diterima oleh fungsi
                         sig = inspect.signature(tool_fn)
                         valid_args = {k: v for k, v in args.items() if k in sig.parameters}
-                        res = tool_fn(**valid_args)
+                        if asyncio.iscoroutinefunction(tool_fn):
+                            res = await tool_fn(**valid_args)
+                        else:
+                            res = await asyncio.to_thread(tool_fn, **valid_args)
                     else:
                         res = {"error": "Tool not found"}
+                    
                     duration_ms = (time.time() - start_t) * 1000
                     tracker.record_tool_call(fn_name, duration_ms)
-
-                    messages.append({
+                    return {
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": json.dumps(res)
-                    })
+                    }
+
+                # Parallel tool execution via asyncio.gather
+                tool_results = await asyncio.gather(
+                    *[execute_single_tool(tc) for tc in choice.message.tool_calls]
+                )
+                for res_msg in tool_results:
+                    messages.append(res_msg)
             else:
                 reply = choice.message.content
                 reply = sanitize_output(reply)
