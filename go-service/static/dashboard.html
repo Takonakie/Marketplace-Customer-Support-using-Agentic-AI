@@ -446,6 +446,178 @@
             border-radius: 4px;
             font-size: 12px;
         }
+
+        /* Scrollable Table Container & Sticky Header */
+        .table-container {
+            max-height: 440px;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-card);
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        .table-container th {
+            position: sticky;
+            top: 0;
+            background: #0f172a;
+            z-index: 5;
+            box-shadow: 0 1px 0 var(--border-card);
+        }
+
+        /* Pagination Controls */
+        .pagination-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 4px 4px 4px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .pagination-btns {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .page-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        /* Modal Overlay & Box */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: #0f172a;
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 680px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-card);
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+            background: rgba(244, 63, 94, 0.2);
+            border-color: var(--accent-rose);
+        }
+
+        .trace-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .trace-detail-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .trace-detail-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .trace-detail-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            word-break: break-all;
+        }
+
+        .json-container {
+            background: #090d16;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-card);
+            font-family: monospace;
+            font-size: 12px;
+            color: #38bdf8;
+            white-space: pre-wrap;
+            max-height: 250px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -514,23 +686,26 @@
                         <div class="panel-title">Daftar Tiket Komplain (Case Management)</div>
                         <button class="btn-refresh" onclick="loadCases()">🔄 Refresh Data</button>
                     </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Judul Tiket</th>
-                                <th>Criticality</th>
-                                <th>Penanggung Jawab (Divisi)</th>
-                                <th>Tanggal</th>
-                                <th>Status</th>
-                                <th>Aksi Update Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="caseTableBody">
-                            <tr>
-                                <td colspan="6" style="text-align: center; color: var(--text-muted);">Memuat data tiket...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Judul Tiket</th>
+                                    <th>Criticality</th>
+                                    <th>Penanggung Jawab (Divisi)</th>
+                                    <th>Tanggal</th>
+                                    <th>Status</th>
+                                    <th>Aksi Update Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="caseTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted);">Memuat data tiket...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="casePagination"></div>
                 </div>
 
                 <div class="card-panel">
@@ -578,20 +753,23 @@
                         <div class="panel-title">Daftar Staf Terdaftar per Divisi</div>
                         <button class="btn-refresh" onclick="loadUsers()">🔄 Refresh</button>
                     </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nama Staf</th>
-                                <th>Divisi / Role</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="userTableBody">
-                            <tr>
-                                <td colspan="3" style="text-align: center; color: var(--text-muted);">Memuat data staf...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nama Staf</th>
+                                    <th>Divisi / Role</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: var(--text-muted);">Memuat data staf...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="userPagination"></div>
                 </div>
             </div>
         </div>
@@ -603,24 +781,28 @@
                     <div class="panel-title">📡 Real-time AI Agent Traces & Telemetry Logs</div>
                     <button class="btn-refresh" onclick="loadMetrics()">🔄 Refresh Metrics</button>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Trace ID</th>
-                            <th>Chat ID</th>
-                            <th>Latency</th>
-                            <th>Token Usage</th>
-                            <th>Tool Calls Executed</th>
-                            <th>Status / Errors</th>
-                            <th>Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody id="traceTableBody">
-                        <tr>
-                            <td colspan="7" style="text-align: center; color: var(--text-muted);">Belum ada data trace terekam. Kirim pesan di Telegram untuk memulai telemetri...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Trace ID</th>
+                                <th>Chat ID</th>
+                                <th>Latency</th>
+                                <th>Token Usage</th>
+                                <th>Tool Calls Executed</th>
+                                <th>Status / Errors</th>
+                                <th>Timestamp</th>
+                                <th>Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody id="traceTableBody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: var(--text-muted);">Belum ada data trace terekam. Kirim pesan di Telegram untuk memulai telemetri...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="tracePagination"></div>
             </div>
         </div>
 
@@ -661,21 +843,24 @@
                         <div class="panel-title">Daftar Dokumen SOP Terdaftar</div>
                         <button class="btn-refresh" onclick="loadDocs()">🔄 Refresh</button>
                     </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nama SOP</th>
-                                <th>Tanggal Diperbarui</th>
-                                <th>Status Vector</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sopTableBody">
-                            <tr>
-                                <td colspan="4" style="text-align: center; color: var(--text-muted);">Memuat daftar dokumen...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nama SOP</th>
+                                    <th>Tanggal Diperbarui</th>
+                                    <th>Status Vector</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sopTableBody">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--text-muted);">Memuat daftar dokumen...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="sopPagination"></div>
                 </div>
             </div>
         </div>
@@ -726,29 +911,98 @@
                         <div class="panel-title">Daftar Data Pesanan (Recent Seeded Orders)</div>
                         <button class="btn-refresh" onclick="loadSeededOrders()">🔄 Refresh</button>
                     </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Customer ID</th>
-                                <th>Produk</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="orderTableBody">
-                            <tr>
-                                <td colspan="4" style="text-align: center; color: var(--text-muted);">Memuat daftar pesanan...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Customer ID</th>
+                                    <th>Produk</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderTableBody">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--text-muted);">Memuat daftar pesanan...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="orderPagination"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Trace Detail Modal Overlay -->
+    <div id="traceModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">🔍 Telemetry Trace Detailed Inspection</div>
+                <button class="modal-close" onclick="closeTraceModal()">✕</button>
+            </div>
+            
+            <div class="trace-detail-grid">
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Trace UUID</div>
+                    <div class="trace-detail-value" id="modalTraceId" style="color: var(--accent-cyan);">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Message ID</div>
+                    <div class="trace-detail-value" id="modalMessageId">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Telegram Chat ID</div>
+                    <div class="trace-detail-value" id="modalChatId">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Execution Latency</div>
+                    <div class="trace-detail-value" id="modalLatency" style="color: var(--accent-amber);">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Token Breakdown</div>
+                    <div class="trace-detail-value" id="modalTokens" style="color: #a78bfa;">-</div>
+                </div>
+                <div class="trace-detail-card">
+                    <div class="trace-detail-label">Timestamp</div>
+                    <div class="trace-detail-value" id="modalTimestamp">-</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 12px; font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                🛠️ Executed Tool Calls & Durations
+            </div>
+            <div id="modalToolCallsList" style="margin-bottom: 16px;">-</div>
+
+            <div style="margin-bottom: 12px; font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                📜 Raw Telemetry JSON Payload
+            </div>
+            <pre class="json-container" id="modalJsonPayload"></pre>
+        </div>
+    </div>
+
     <script>
         let cachedDocs = [];
+        let allCases = [];
+        let allUsers = [];
+        let allTraces = [];
+        let allOrders = [];
         let editingDocUuid = null;
+
+        let currentCasePage = 1;
+        const casePageSize = 5;
+
+        let currentUserPage = 1;
+        const userPageSize = 10;
+
+        let currentTracePage = 1;
+        const tracePageSize = 10;
+
+        let currentSopPage = 1;
+        const sopPageSize = 10;
+
+        let currentOrderPage = 1;
+        const orderPageSize = 10;
 
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -763,33 +1017,68 @@
             if (tabId === 'metricsTab') loadMetrics();
         }
 
+        function renderPaginationControls(containerId, currentPage, totalPages, changeFnName) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="pagination-wrapper">
+                    <div>Halaman <strong>${currentPage}</strong> dari <strong>${totalPages}</strong></div>
+                    <div class="pagination-btns">
+                        <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="${changeFnName}(${currentPage - 1})">◀ Prev</button>
+                        <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="${changeFnName}(${currentPage + 1})">Next ▶</button>
+                    </div>
+                </div>
+            `;
+        }
+
         // ---- USER & ROLE / DIVISION MANAGEMENT ----
         async function loadUsers() {
             try {
                 const res = await fetch('/api/users');
-                const users = await res.json();
-                const tbody = document.getElementById('userTableBody');
-                tbody.innerHTML = '';
-
-                if (!users || users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Belum ada staf terdaftar.</td></tr>';
-                    return;
-                }
-
-                users.forEach(u => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${escapeHtml(u.name)}</strong></td>
-                        <td><span class="code-tag">${escapeHtml(u.division)}</span></td>
-                        <td>
-                            <button class="btn-danger" onclick="deleteUser('${u.uuid}', '${escapeHtml(u.name)}')">🗑️ Hapus</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                allUsers = await res.json() || [];
+                renderUsersPage(currentUserPage);
             } catch (err) {
                 console.error("Gagal memuat data users:", err);
             }
+        }
+
+        function renderUsersPage(page) {
+            currentUserPage = page;
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+
+            if (!allUsers || allUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Belum ada staf terdaftar.</td></tr>';
+                renderPaginationControls('userPagination', 1, 0, 'renderUsersPage');
+                return;
+            }
+
+            const totalPages = Math.ceil(allUsers.length / userPageSize);
+            if (currentUserPage > totalPages) currentUserPage = totalPages;
+            if (currentUserPage < 1) currentUserPage = 1;
+
+            const startIdx = (currentUserPage - 1) * userPageSize;
+            const pageData = allUsers.slice(startIdx, startIdx + userPageSize);
+
+            pageData.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(u.name)}</strong></td>
+                    <td><span class="code-tag">${escapeHtml(u.division)}</span></td>
+                    <td>
+                        <button class="btn-danger" onclick="deleteUser('${u.uuid}', '${escapeHtml(u.name)}')">🗑️ Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderPaginationControls('userPagination', currentUserPage, totalPages, 'renderUsersPage');
         }
 
         async function handleCreateUser(e) {
@@ -857,95 +1146,154 @@
                 document.getElementById('count_get_purchase_total').innerText = (tcCounts['get_purchase_total'] || 0) + ' calls';
                 document.getElementById('count_create_case').innerText = (tcCounts['create_case'] || 0) + ' calls';
 
-                // Populate Traces Table
-                const tbody = document.getElementById('traceTableBody');
-                tbody.innerHTML = '';
-
-                const traces = data.recent_traces || [];
-                if (traces.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Belum ada data trace terekam. Kirim pesan di Telegram untuk melihat telemetri real-time.</td></tr>';
-                    return;
-                }
-
-                traces.forEach(t => {
-                    const tr = document.createElement('tr');
-                    
-                    let toolCallsStr = '-';
-                    if (t.tool_calls && t.tool_calls.length > 0) {
-                        toolCallsStr = t.tool_calls.map(tc => `<span class="code-tag">${escapeHtml(tc.tool)} (${Math.round(tc.duration_ms)}ms)</span>`).join(' ');
-                    }
-
-                    let statusBadge = '<span class="badge-status status-resolved">OK</span>';
-                    if (t.errors && t.errors.length > 0) {
-                        statusBadge = `<span class="badge-status status-error">${t.errors.length} Error</span>`;
-                    }
-
-                    const promptTok = t.token_usage ? t.token_usage.prompt_tokens : 0;
-                    const complTok = t.token_usage ? t.token_usage.completion_tokens : 0;
-                    const totalTok = promptTok + complTok;
-
-                    tr.innerHTML = `
-                        <td><code style="font-size: 11px; color: var(--accent-cyan);">${escapeHtml((t.trace_id || '-').substring(0, 8))}...</code></td>
-                        <td><code>${t.chat_id || '-'}</code></td>
-                        <td><strong>${Math.round(t.latency_ms || 0)} ms</strong></td>
-                        <td>${totalTok.toLocaleString()} <small style="color: var(--text-muted);">(${promptTok}/${complTok})</small></td>
-                        <td>${toolCallsStr}</td>
-                        <td>${statusBadge}</td>
-                        <td>${new Date(t.timestamp).toLocaleTimeString('id-ID')}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                allTraces = data.recent_traces || [];
+                renderTracesPage(currentTracePage);
 
             } catch (err) {
                 console.error("Gagal memuat telemetry metrics:", err);
             }
         }
 
+        function renderTracesPage(page) {
+            currentTracePage = page;
+            const tbody = document.getElementById('traceTableBody');
+            tbody.innerHTML = '';
+
+            if (!allTraces || allTraces.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Belum ada data trace terekam. Kirim pesan di Telegram untuk melihat telemetri real-time.</td></tr>';
+                renderPaginationControls('tracePagination', 1, 0, 'renderTracesPage');
+                return;
+            }
+
+            const totalPages = Math.ceil(allTraces.length / tracePageSize);
+            if (currentTracePage > totalPages) currentTracePage = totalPages;
+            if (currentTracePage < 1) currentTracePage = 1;
+
+            const startIdx = (currentTracePage - 1) * tracePageSize;
+            const pageData = allTraces.slice(startIdx, startIdx + tracePageSize);
+
+            pageData.forEach(t => {
+                const tr = document.createElement('tr');
+                
+                let toolCallsStr = '-';
+                if (t.tool_calls && t.tool_calls.length > 0) {
+                    toolCallsStr = t.tool_calls.map(tc => `<span class="code-tag">${escapeHtml(tc.tool)} (${Math.round(tc.duration_ms)}ms)</span>`).join(' ');
+                }
+
+                let statusBadge = '<span class="badge-status status-resolved">OK</span>';
+                if (t.errors && t.errors.length > 0) {
+                    statusBadge = `<span class="badge-status status-error">${t.errors.length} Error</span>`;
+                }
+
+                const promptTok = t.token_usage ? t.token_usage.prompt_tokens : 0;
+                const complTok = t.token_usage ? t.token_usage.completion_tokens : 0;
+                const totalTok = promptTok + complTok;
+
+                tr.innerHTML = `
+                    <td><code style="font-size: 11px; color: var(--accent-cyan);">${escapeHtml((t.trace_id || '-').substring(0, 8))}...</code></td>
+                    <td><code>${t.chat_id || '-'}</code></td>
+                    <td><strong>${Math.round(t.latency_ms || 0)} ms</strong></td>
+                    <td>${totalTok.toLocaleString()} <small style="color: var(--text-muted);">(${promptTok}/${complTok})</small></td>
+                    <td>${toolCallsStr}</td>
+                    <td>${statusBadge}</td>
+                    <td>${new Date(t.timestamp).toLocaleTimeString('id-ID')}</td>
+                    <td>
+                        <button class="btn-action" onclick="openTraceModal('${t.trace_id}')">🔍 Detail</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderPaginationControls('tracePagination', currentTracePage, totalPages, 'renderTracesPage');
+        }
+
+        function openTraceModal(traceId) {
+            const t = allTraces.find(tr => tr.trace_id === traceId);
+            if (!t) return;
+
+            document.getElementById('modalTraceId').innerText = t.trace_id || '-';
+            document.getElementById('modalMessageId').innerText = t.message_id || '-';
+            document.getElementById('modalChatId').innerText = t.chat_id || '-';
+            document.getElementById('modalLatency').innerText = Math.round(t.latency_ms || 0) + ' ms';
+
+            const pTok = t.token_usage ? t.token_usage.prompt_tokens : 0;
+            const cTok = t.token_usage ? t.token_usage.completion_tokens : 0;
+            document.getElementById('modalTokens').innerText = `${pTok + cTok} (Prompt: ${pTok}, Completion: ${cTok})`;
+            document.getElementById('modalTimestamp').innerText = new Date(t.timestamp).toLocaleString('id-ID');
+
+            const toolCallsDiv = document.getElementById('modalToolCallsList');
+            if (t.tool_calls && t.tool_calls.length > 0) {
+                toolCallsDiv.innerHTML = t.tool_calls.map(tc => `
+                    <div style="background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; font-size: 13px;">
+                        <span>⚙️ <strong style="color: var(--accent-cyan);">${escapeHtml(tc.tool)}</strong></span>
+                        <span style="color: var(--accent-amber); font-weight: 700;">${Math.round(tc.duration_ms)} ms</span>
+                    </div>
+                `).join('');
+            } else {
+                toolCallsDiv.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">Tidak ada tool call dieksekusi.</span>';
+            }
+
+            document.getElementById('modalJsonPayload').innerText = JSON.stringify(t, null, 2);
+            document.getElementById('traceModal').classList.add('active');
+        }
+
+        function closeTraceModal() {
+            document.getElementById('traceModal').classList.remove('active');
+        }
+
         // ---- CASES MANAGEMENT ----
         async function loadCases() {
             try {
                 const response = await fetch('/api/cases');
-                const cases = await response.json();
-
-                const tbody = document.getElementById('caseTableBody');
-                tbody.innerHTML = '';
-
-                let openCount = 0;
-                let resolvedCount = 0;
-
-                if (!cases || cases.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Belum ada tiket kasus yang terdaftar.</td></tr>';
-                } else {
-                    cases.forEach(c => {
-                        if (c.status === 'open') openCount++;
-                        if (c.status === 'resolved' || c.status === 'closed') resolvedCount++;
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>
-                                <strong>${escapeHtml(c.name)}</strong><br>
-                                <small style="color: var(--text-muted);">${escapeHtml(c.description || '-')}</small>
-                            </td>
-                            <td><span style="font-weight: 700; color: ${getCriticalityColor(c.criticality)}">${escapeHtml((c.criticality || 'low').toUpperCase())}</span></td>
-                            <td><span class="code-tag">${escapeHtml(c.assign_to || 'Belum ditugaskan')}</span></td>
-                            <td>${new Date(c.datetime).toLocaleString('id-ID')}</td>
-                            <td><span class="badge-status status-${c.status}">${escapeHtml(c.status)}</span></td>
-                            <td>
-                                <select class="select-status" onchange="updateStatus('${c.uuid}', this.value)">
-                                    <option value="open" ${c.status === 'open' ? 'selected' : ''}>Open</option>
-                                    <option value="in_progress" ${c.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                                    <option value="resolved" ${c.status === 'resolved' ? 'selected' : ''}>Resolved</option>
-                                    <option value="closed" ${c.status === 'closed' ? 'selected' : ''}>Closed</option>
-                                </select>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-
+                allCases = await response.json() || [];
+                renderCasesPage(currentCasePage);
             } catch (err) {
                 console.error("Gagal memuat data cases:", err);
             }
+        }
+
+        function renderCasesPage(page) {
+            currentCasePage = page;
+            const tbody = document.getElementById('caseTableBody');
+            tbody.innerHTML = '';
+
+            if (!allCases || allCases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Belum ada tiket kasus yang terdaftar.</td></tr>';
+                renderPaginationControls('casePagination', 1, 0, 'renderCasesPage');
+                return;
+            }
+
+            const totalPages = Math.ceil(allCases.length / casePageSize);
+            if (currentCasePage > totalPages) currentCasePage = totalPages;
+            if (currentCasePage < 1) currentCasePage = 1;
+
+            const startIdx = (currentCasePage - 1) * casePageSize;
+            const pageData = allCases.slice(startIdx, startIdx + casePageSize);
+
+            pageData.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong>${escapeHtml(c.name)}</strong><br>
+                        <small style="color: var(--text-muted);">${escapeHtml(c.description || '-')}</small>
+                    </td>
+                    <td><span style="font-weight: 700; color: ${getCriticalityColor(c.criticality)}">${escapeHtml((c.criticality || 'low').toUpperCase())}</span></td>
+                    <td><span class="code-tag">${escapeHtml(c.assign_to || 'Belum ditugaskan')}</span></td>
+                    <td>${new Date(c.datetime).toLocaleString('id-ID')}</td>
+                    <td><span class="badge-status status-${c.status}">${escapeHtml(c.status)}</span></td>
+                    <td>
+                        <select class="select-status" onchange="updateStatus('${c.uuid}', this.value)">
+                            <option value="open" ${c.status === 'open' ? 'selected' : ''}>Open</option>
+                            <option value="in_progress" ${c.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="resolved" ${c.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                            <option value="closed" ${c.status === 'closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderPaginationControls('casePagination', currentCasePage, totalPages, 'renderCasesPage');
         }
 
         async function updateStatus(uuid, newStatus) {
@@ -1008,31 +1356,46 @@
         async function loadDocs() {
             try {
                 const res = await fetch('/api/docs');
-                cachedDocs = await res.json();
-                const tbody = document.getElementById('sopTableBody');
-                tbody.innerHTML = '';
-
-                if (!cachedDocs || cachedDocs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada SOP yang disimpan.</td></tr>';
-                    return;
-                }
-
-                cachedDocs.forEach(d => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${escapeHtml(d.name)}</strong></td>
-                        <td>${new Date(d.updated_at).toLocaleString('id-ID')}</td>
-                        <td><span class="badge-status status-resolved">Indexed / Ready</span></td>
-                        <td>
-                            <button class="btn-edit" onclick="editSop('${d.uuid}')">✏️ Edit</button>
-                            <button class="btn-danger" onclick="deleteSop('${d.uuid}', '${escapeHtml(d.name)}')">🗑️ Hapus</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                cachedDocs = await res.json() || [];
+                renderSopsPage(currentSopPage);
             } catch (err) {
                 console.error("Gagal memuat docs:", err);
             }
+        }
+
+        function renderSopsPage(page) {
+            currentSopPage = page;
+            const tbody = document.getElementById('sopTableBody');
+            tbody.innerHTML = '';
+
+            if (!cachedDocs || cachedDocs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada SOP yang disimpan.</td></tr>';
+                renderPaginationControls('sopPagination', 1, 0, 'renderSopsPage');
+                return;
+            }
+
+            const totalPages = Math.ceil(cachedDocs.length / sopPageSize);
+            if (currentSopPage > totalPages) currentSopPage = totalPages;
+            if (currentSopPage < 1) currentSopPage = 1;
+
+            const startIdx = (currentSopPage - 1) * sopPageSize;
+            const pageData = cachedDocs.slice(startIdx, startIdx + sopPageSize);
+
+            pageData.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(d.name)}</strong></td>
+                    <td>${new Date(d.updated_at).toLocaleString('id-ID')}</td>
+                    <td><span class="badge-status status-resolved">Indexed / Ready</span></td>
+                    <td>
+                        <button class="btn-edit" onclick="editSop('${d.uuid}')">✏️ Edit</button>
+                        <button class="btn-danger" onclick="deleteSop('${d.uuid}', '${escapeHtml(d.name)}')">🗑️ Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderPaginationControls('sopPagination', currentSopPage, totalPages, 'renderSopsPage');
         }
 
         function editSop(uuid) {
@@ -1108,28 +1471,43 @@
         async function loadSeededOrders() {
             try {
                 const res = await fetch('/api/orders');
-                const orders = await res.json();
-                const tbody = document.getElementById('orderTableBody');
-                tbody.innerHTML = '';
-
-                if (!orders || orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada data pesanan uji coba.</td></tr>';
-                    return;
-                }
-
-                orders.forEach(o => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><code>${escapeHtml(o.customer_id)}</code></td>
-                        <td><strong>${escapeHtml(o.product_name)}</strong></td>
-                        <td>Rp ${Number(o.amount).toLocaleString('id-ID')}</td>
-                        <td><span class="badge-status status-resolved">${escapeHtml(o.status)}</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                allOrders = await res.json() || [];
+                renderOrdersPage(currentOrderPage);
             } catch (err) {
                 console.error("Gagal memuat data orders:", err);
             }
+        }
+
+        function renderOrdersPage(page) {
+            currentOrderPage = page;
+            const tbody = document.getElementById('orderTableBody');
+            tbody.innerHTML = '';
+
+            if (!allOrders || allOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada data pesanan uji coba.</td></tr>';
+                renderPaginationControls('orderPagination', 1, 0, 'renderOrdersPage');
+                return;
+            }
+
+            const totalPages = Math.ceil(allOrders.length / orderPageSize);
+            if (currentOrderPage > totalPages) currentOrderPage = totalPages;
+            if (currentOrderPage < 1) currentOrderPage = 1;
+
+            const startIdx = (currentOrderPage - 1) * orderPageSize;
+            const pageData = allOrders.slice(startIdx, startIdx + orderPageSize);
+
+            pageData.forEach(o => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${escapeHtml(o.customer_id)}</code></td>
+                    <td><strong>${escapeHtml(o.product_name)}</strong></td>
+                    <td>Rp ${Number(o.amount).toLocaleString('id-ID')}</td>
+                    <td><span class="badge-status status-resolved">${escapeHtml(o.status)}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderPaginationControls('orderPagination', currentOrderPage, totalPages, 'renderOrdersPage');
         }
 
         async function handleCreateOrder(e) {
@@ -1149,7 +1527,7 @@
                 });
 
                 if (res.ok) {
-                    showToast(toast, '✅ Pesanan berhasil dibuat & masuk database!', 'success');
+                    showToast(toast, `✅ Pesanan berhasil dibuat & masuk database!`, 'success');
                     document.getElementById('orderForm').reset();
                     loadSeededOrders();
                 } else {
